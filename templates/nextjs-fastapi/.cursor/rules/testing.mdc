@@ -1,0 +1,116 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# テスト規約
+
+## フロントエンド（Next.js/TypeScript）
+
+### テストフレームワーク
+
+- Jest + React Testing Library
+
+### テストファイル配置
+
+- コンポーネントと同じディレクトリに `__tests__/` フォルダを作成
+- または `*.test.tsx` / `*.spec.tsx` ファイル名を使用
+
+### テストカバレッジ
+
+- 目標カバレッジ: 80%以上
+- 主要なビジネスロジックは必ずテスト
+
+### テスト種類
+
+- **Unit Tests**: 個別のコンポーネント・関数のテスト
+- **Integration Tests**: 複数コンポーネントの統合テスト
+- **E2E Tests**: Playwright による End-to-End テスト（オプション）
+
+### テストパターン
+
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react'
+import { Button } from './button'
+
+describe('Button', () => {
+  it('renders button with text', () => {
+    render(<Button>Click me</Button>)
+    expect(screen.getByText('Click me')).toBeInTheDocument()
+  })
+
+  it('calls onClick handler when clicked', () => {
+    const handleClick = jest.fn()
+    render(<Button onClick={handleClick}>Click me</Button>)
+    fireEvent.click(screen.getByText('Click me'))
+    expect(handleClick).toHaveBeenCalledTimes(1)
+  })
+})
+```
+
+## バックエンド（Python/FastAPI）
+
+### テストフレームワーク
+
+- pytest + pytest-asyncio
+
+### テストファイル配置
+
+- `tests/` ディレクトリにテストファイルを配置
+- ファイル名: `test_*.py` または `*_test.py`
+
+### テストカバレッジ
+
+- 目標カバレッジ: 80%以上
+- API エンドポイント・サービス層は必ずテスト
+
+### テスト種類
+
+- **Unit Tests**: 個別の関数・クラスのテスト
+- **Integration Tests**: データベース・外部 API を含むテスト
+- **API Tests**: FastAPI エンドポイントのテスト
+
+### テストパターン
+
+```python
+import pytest
+from httpx import AsyncClient
+from app.main import app
+
+@pytest.mark.asyncio
+async def test_create_user():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/users/",
+            json={"email": "test@example.com", "name": "Test User"}
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["email"] == "test@example.com"
+        assert "id" in data
+```
+
+## テスト実行
+
+### フロントエンド
+
+```bash
+npm run test          # 全テスト実行
+npm run test:watch    # ウォッチモード
+npm run test:coverage # カバレッジレポート生成
+```
+
+### バックエンド
+
+```bash
+pytest                     # 全テスト実行
+pytest tests/test_users.py # 特定ファイルのテスト
+pytest --cov=app           # カバレッジレポート生成
+```
+
+## テスト前の準備
+
+- データベースのテスト用データをセットアップ
+- モック・スタブを適切に使用
+- テスト間の独立性を保つ（各テストでクリーンアップ）

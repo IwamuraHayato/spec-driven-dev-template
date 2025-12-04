@@ -1,0 +1,74 @@
+# Template Configuration for Next.js + FastAPI Projects
+# This file defines variables that will be replaced during template instantiation
+
+project:
+  name: "{{PROJECT_NAME}}"
+  description: "{{PROJECT_DESCRIPTION}}"
+  repository_url: "{{REPOSITORY_URL}}"
+
+tech_stack:
+  frontend:
+    framework: "Next.js"
+    version: "15+"
+    language: "TypeScript"
+    styling: "Tailwind CSS"
+    state_management: "React Context / Zustand"
+    package_manager: "npm"
+
+  backend:
+    framework: "FastAPI"
+    version: "0.104+"
+    language: "Python"
+    python_version: "3.12+"
+    orm: "SQLAlchemy"
+    migration: "Alembic"
+
+  database:
+    # Options: PostgreSQL / MySQL
+    primary: "{{DATABASE_TYPE}}"  # PostgreSQL or MySQL
+    version: "{{DATABASE_VERSION}}"  # PostgreSQL 14+ or MySQL 8.0+
+    # Database-specific settings
+    port: "{{DATABASE_PORT}}"  # PostgreSQL: 5432, MySQL: 3306
+    client_tools: "{{DATABASE_CLIENT_TOOLS}}"  # PostgreSQL: "psql, pgAdmin, DBeaver" / MySQL: "mysql, MySQL Workbench, DBeaver"
+    url_example: "{{DATABASE_URL_EXAMPLE}}"  # PostgreSQL: "postgresql+asyncpg://user:password@localhost:5432/dbname" / MySQL: "mysql+aiomysql://user:password@localhost:3306/dbname"
+
+  infrastructure:
+    platform: "{{INFRASTRUCTURE_PLATFORM}}"  # AWS / GCP / Azure
+    containerization: "Docker"
+
+features:
+  # List of main features (will be converted to markdown list)
+  - "{{FEATURE_1}}"
+  - "{{FEATURE_2}}"
+  - "{{FEATURE_3}}"
+
+team:
+  organization: "{{ORGANIZATION_NAME}}"
+  project_manager: "{{PM_NAME}}"
+  tech_lead: "{{TECH_LEAD_NAME}}"
+
+development:
+  branch_strategy: "git-flow"  # git-flow / trunk-based
+  main_branch: "main"
+  develop_branch: "develop"
+  test_coverage_target: 80
+
+code_quality:
+  frontend:
+    linter: "ESLint"
+    formatter: "Prettier"
+
+  backend:
+    linter: "Ruff"
+    formatter: "Ruff"
+    type_checker: "MyPy"
+
+ci_cd:
+  platform: "GitHub Actions"
+  auto_review: true
+  auto_deploy: false
+
+# Domain-specific settings (optional)
+domain_specific:
+  compliance: []  # e.g., ["GDPR", "HIPAA", "PCI-DSS"]
+  security_requirements: []

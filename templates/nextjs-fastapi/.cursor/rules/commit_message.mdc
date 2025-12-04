@@ -1,0 +1,59 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# コミットメッセージ規約
+
+## フォーマット
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+## タイプ
+
+- feat: 新機能
+- fix: バグ修正
+- docs: ドキュメントのみの変更
+- style: コードの動作に影響しないスタイルの変更
+- refactor: リファクタリング
+- test: テストコードの追加・修正
+- chore: ビルドプロセスやツールの変更
+- perf: パフォーマンス改善
+
+## スコープ
+
+- 影響を受けるコンポーネントや機能を指定
+- Frontend: component, page, api, ui, hook, store
+- Backend: endpoint, service, model, schema, migration
+- 共通: auth, user, config, db, ci
+
+## 本文
+
+- 変更の詳細な説明
+- 変更の理由
+- 関連する Issue 番号
+
+## フッター
+
+- 破壊的変更がある場合は "BREAKING CHANGE:" で始める
+- 関連する Issue 番号を記載（例: `Closes #123`）
+
+## 例
+
+```
+feat(auth): ユーザー認証機能を追加
+
+JWT トークンベースの認証システムを実装
+- ログイン・ログアウト API エンドポイント
+- トークンリフレッシュ機能
+- 認証ミドルウェア
+
+Closes #45
+```

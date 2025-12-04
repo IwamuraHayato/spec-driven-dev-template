@@ -1,0 +1,322 @@
+# {{PROJECT_NAME}}
+
+## プロジェクト概要
+
+{{PROJECT_DESCRIPTION}}
+
+## 技術スタック
+
+### フロントエンド
+
+- **Next.js 15+**: React フレームワーク（App Router）
+- **TypeScript**: 型安全な開発
+- **Tailwind CSS**: ユーティリティファーストの CSS フレームワーク
+- **Zustand**: 状態管理ライブラリ
+
+### バックエンド
+
+- **Python 3.12+**: プログラミング言語
+- **FastAPI**: 高速な Web フレームワーク
+- **{{DATABASE_TYPE}} {{DATABASE_VERSION}}**: リレーショナルデータベース
+- **SQLAlchemy**: ORM
+- **Alembic**: データベースマイグレーション
+
+### 開発環境
+
+- **Docker**: コンテナ化
+- **GitHub Actions**: CI/CD
+- **VS Code**: 統合開発環境
+- **Ruff**: Python linter/formatter
+- **ESLint + Prettier**: JavaScript/TypeScript linter/formatter
+
+## プロジェクト構造
+
+```
+{{PROJECT_NAME}}/
+├── frontend/                  # Next.js フロントエンド
+│   ├── src/
+│   │   ├── app/              # App Router
+│   │   ├── components/       # React コンポーネント
+│   │   ├── lib/              # ユーティリティ
+│   │   └── types/            # TypeScript 型定義
+│   └── public/               # 静的ファイル
+├── backend/                  # Python FastAPI バックエンド
+│   ├── app/
+│   │   ├── api/              # API エンドポイント
+│   │   ├── core/             # コア設定
+│   │   ├── models/           # データベースモデル
+│   │   ├── schemas/          # Pydantic スキーマ
+│   │   └── services/         # ビジネスロジック
+│   └── tests/                # テスト
+├── docs/                     # ドキュメント
+├── .github/                  # GitHub 設定
+└── docker-compose.yml        # Docker 構成
+```
+
+## 主要機能
+
+{{FEATURES_LIST}}
+
+## セットアップ手順
+
+### 前提条件
+
+- Node.js 20+ (Frontend)
+- Python 3.12+ (Backend)
+- {{DATABASE_TYPE}} {{DATABASE_VERSION}}
+- Docker & Docker Compose (推奨)
+
+### 環境変数の設定
+
+#### Frontend
+
+```bash
+cd frontend
+cp .env.example .env.local
+```
+
+`.env.local` を編集:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+#### Backend
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+`.env` を編集:
+
+```bash
+DATABASE_URL={{DATABASE_URL_EXAMPLE}}
+SECRET_KEY=your-secret-key-here
+```
+
+### Docker Compose を使用する場合（推奨）
+
+```bash
+# 全サービス起動
+docker-compose up -d
+
+# ログ確認
+docker-compose logs -f
+
+# サービス停止
+docker-compose down
+```
+
+アクセス:
+
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API ドキュメント: http://localhost:8000/docs
+
+### ローカル開発環境
+
+#### Frontend
+
+```bash
+cd frontend
+
+# 依存関係インストール
+npm install
+
+# 開発サーバー起動
+npm run dev
+
+# ビルド
+npm run build
+
+# 本番サーバー起動
+npm run start
+```
+
+#### Backend
+
+```bash
+cd backend
+
+# 仮想環境作成
+python -m venv venv
+
+# 仮想環境有効化
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 依存関係インストール
+pip install -r requirements.txt
+
+# データベースマイグレーション
+alembic upgrade head
+
+# 開発サーバー起動
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+## よく使用するコマンド
+
+### Frontend
+
+```bash
+npm run dev          # 開発サーバー起動
+npm run build        # ビルド
+npm run start        # 本番サーバー起動
+npm run lint         # Lint チェック
+npm run format       # コードフォーマット
+npm run test         # テスト実行
+npm run type-check   # TypeScript 型チェック
+```
+
+### Backend
+
+```bash
+# 開発サーバー起動
+uvicorn app.main:app --reload
+
+# テスト実行
+pytest
+
+# カバレッジ付きテスト
+pytest --cov=app --cov-report=html
+
+# Lint & Format
+ruff check app/ tests/
+ruff format app/ tests/
+
+# 型チェック
+mypy .
+
+# マイグレーション作成
+alembic revision --autogenerate -m "description"
+
+# マイグレーション適用
+alembic upgrade head
+```
+
+## 開発規約
+
+### コミットメッセージ
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+例:
+
+```
+feat(auth): ユーザー認証機能を追加
+
+JWT トークンベースの認証システムを実装
+
+Closes #123
+```
+
+### ブランチ戦略
+
+- `main`: 本番環境
+- `develop`: 開発環境
+- `feature/*`: 新機能開発
+- `bugfix/*`: バグ修正
+- `hotfix/*`: 緊急修正
+
+### コードレビュー
+
+- PR 作成前に Lint エラーを解消
+- テストが全て通過していることを確認
+- 最低 1 名のレビュー承認が必要
+- レビューガイドライン: [docs/dev/REVIEW.md](docs/dev/REVIEW.md)
+
+## テスト
+
+### Frontend
+
+```bash
+npm run test              # 全テスト実行
+npm run test:watch        # ウォッチモード
+npm run test:coverage     # カバレッジレポート
+```
+
+### Backend
+
+```bash
+pytest                           # 全テスト実行
+pytest tests/test_users.py       # 特定ファイルのテスト
+pytest --cov=app                 # カバレッジレポート
+```
+
+目標カバレッジ: **{{TEST_COVERAGE_TARGET}}%以上**
+
+## API ドキュメント
+
+開発サーバー起動後、以下の URL にアクセス:
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+## トラブルシューティング
+
+### よくある問題
+
+#### ポート競合
+
+```bash
+# ポート使用状況確認
+lsof -i :3000  # Frontend
+lsof -i :8000  # Backend
+lsof -i :{{DATABASE_PORT}}  # {{DATABASE_TYPE}}
+```
+
+#### データベース接続エラー
+
+```bash
+# {{DATABASE_TYPE}} 起動確認
+docker-compose ps
+
+# ログ確認
+docker-compose logs
+```
+
+#### 依存関係の問題
+
+```bash
+# Frontend
+rm -rf node_modules package-lock.json
+npm install
+
+# Backend
+rm -rf venv
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+## デプロイ
+
+（デプロイ手順は環境に応じて記載）
+
+## ライセンス
+
+{{LICENSE}}
+
+## 貢献
+
+1. このリポジトリをフォーク
+2. フィーチャーブランチを作成 (`git checkout -b feature/amazing-feature`)
+3. 変更をコミット (`git commit -m 'feat: add amazing feature'`)
+4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
+5. プルリクエストを作成
+
+## 連絡先
+
+- プロジェクト責任者: {{PM_NAME}}
+- 技術リード: {{TECH_LEAD_NAME}}
+- Organization: {{ORGANIZATION_NAME}}
+- Repository: {{REPOSITORY_URL}}

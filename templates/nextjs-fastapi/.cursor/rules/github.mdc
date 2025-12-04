@@ -1,0 +1,82 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# GitHub 操作ルール
+
+## Issue 管理
+
+### Issue 作成時
+
+- 明確なタイトルを付ける
+- 適切なラベルを選択（bug, enhancement, documentation 等）
+- テンプレートに従って記入
+- アサイニーを設定
+
+### Issue のライフサイクル
+
+1. Open: 新規作成
+2. In Progress: 作業開始
+3. Review: レビュー待ち
+4. Done: 完了
+
+## Pull Request 管理
+
+### PR 作成前
+
+- ブランチを最新の develop から作成
+- コミットを論理的な単位にまとめる
+- テストが全て通ることを確認
+- Lint エラーがないことを確認
+
+### PR 作成時
+
+- 関連する Issue を紐付ける
+- PR テンプレートに従って記入
+- レビュアーを指定
+- 適切なラベルを設定
+
+### PR レビュー
+
+- 最低1名のレビュー承認が必要
+- コードレビューガイドラインに従う
+- 建設的なフィードバックを心がける
+- 変更要求がある場合は理由を明確に
+
+### PR マージ
+
+- レビュー承認後にマージ
+- マージ方法: Squash and merge（推奨）
+- マージ後は該当ブランチを削除
+
+## GitHub Actions
+
+### ワークフロー
+
+- PR 作成時: 自動テスト・Lint 実行
+- PR レビュー時: Claude Code による自動レビュー
+- main マージ時: デプロイ（設定されている場合）
+
+### ワークフロー失敗時
+
+- エラーログを確認
+- 問題を修正して再プッシュ
+- 必要に応じて Issue を作成
+
+## GitHub CLI (gh) の活用
+
+```bash
+# Issue 作成
+gh issue create --title "バグ修正" --body "詳細な説明"
+
+# PR 作成
+gh pr create --title "feat: 新機能追加" --body "変更内容"
+
+# PR レビュー
+gh pr review 123 --approve --body "LGTM"
+
+# PR マージ
+gh pr merge 123 --squash
+```

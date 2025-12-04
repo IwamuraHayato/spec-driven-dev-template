@@ -1,0 +1,87 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# ドキュメント作成規約
+
+## ドキュメントの種類
+
+### 1. README.md
+
+- プロジェクトの概要
+- セットアップ手順
+- 主要な技術スタック
+- ライセンス情報
+
+### 2. CLAUDE.md
+
+- AI 向けのプロジェクト指示書
+- アーキテクチャの詳細
+- コーディングパターン
+- よく使うコマンド
+
+### 3. API ドキュメント
+
+- FastAPI の自動生成ドキュメント (`/docs`)
+- エンドポイントの説明
+- リクエスト・レスポンスの例
+
+### 4. コンポーネントドキュメント
+
+- Storybook（オプション）
+- コンポーネントの使用例
+- Props の説明
+
+## コメント規約
+
+### TypeScript/JavaScript
+
+```typescript
+/**
+ * ユーザーデータを取得する
+ * @param userId - ユーザーID
+ * @returns ユーザーオブジェクト
+ * @throws {NotFoundError} ユーザーが見つからない場合
+ */
+async function getUser(userId: string): Promise<User> {
+  // 実装
+}
+```
+
+### Python
+
+```python
+async def get_user(user_id: int) -> User | None:
+    """
+    ユーザーデータを取得する
+
+    Args:
+        user_id: ユーザーID
+
+    Returns:
+        User: ユーザーオブジェクト。見つからない場合は None
+
+    Raises:
+        DatabaseError: データベース接続エラーの場合
+    """
+    # 実装
+```
+
+## ドキュメント更新のタイミング
+
+- 新機能追加時: 関連ドキュメントを更新
+- API 変更時: API ドキュメントを更新
+- 設定変更時: README.md を更新
+- アーキテクチャ変更時: CLAUDE.md を更新
+
+## ドキュメントの配置
+
+```
+docs/
+├── architecture/     # アーキテクチャ設計書
+├── api/             # API 仕様書
+├── dev/             # 開発者向けガイド
+└── user/            # ユーザーマニュアル
+```

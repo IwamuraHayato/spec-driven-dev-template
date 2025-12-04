@@ -1,0 +1,575 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## 1. プロジェクト概要
+
+### プロジェクトの目的と機能
+
+- **プロジェクト名**: {{PROJECT_NAME}}
+- **目的**: {{PROJECT_DESCRIPTION}}
+- **主要機能**:
+{{FEATURES_LIST}}
+
+### 主要な技術スタック
+
+- **フロントエンド**: Next.js 15+ (TypeScript)
+- **バックエンド**: Python FastAPI 0.104+ (Python 3.12+)
+- **データベース**: {{DATABASE_TYPE}} {{DATABASE_VERSION}}
+- **インフラ**: {{INFRASTRUCTURE_PLATFORM}}
+- **状態管理**: React Context / Zustand
+- **スタイリング**: Tailwind CSS
+- **テスト**: Jest (Frontend), pytest (Backend)
+
+### ターゲットユーザー
+
+- **エンドユーザー**: {{TARGET_USER_DESCRIPTION}}
+- **管理者**: サービス運営・管理を行うスタッフ
+- **開発者**: アプリケーション開発・保守を行うエンジニア
+
+## 2. アーキテクチャの説明
+
+### ディレクトリ構造
+
+```
+{{PROJECT_NAME}}/
+├── frontend/                  # Next.js フロントエンド
+│   ├── src/
+│   │   ├── app/              # App Router (Next.js 15+)
+│   │   │   ├── (auth)/       # 認証グループ
+│   │   │   ├── (dashboard)/  # ダッシュボードグループ
+│   │   │   └── api/          # API Routes
+│   │   ├── components/       # React コンポーネント
+│   │   │   ├── ui/           # 再利用可能 UI コンポーネント
+│   │   │   ├── features/     # 機能別コンポーネント
+│   │   │   └── layouts/      # レイアウトコンポーネント
+│   │   ├── lib/              # ユーティリティ・ヘルパー
+│   │   ├── hooks/            # カスタムフック
+│   │   ├── stores/           # 状態管理 (Zustand等)
+│   │   ├── types/            # TypeScript 型定義
+│   │   └── styles/           # グローバルスタイル
+│   ├── public/               # 静的ファイル
+│   └── tests/                # テスト
+├── backend/                  # Python FastAPI バックエンド
+│   ├── app/
+│   │   ├── api/              # API エンドポイント
+│   │   │   ├── v1/           # API バージョン 1
+│   │   │   └── dependencies.py  # 依存性注入
+│   │   ├── core/             # コア設定
+│   │   │   ├── config.py     # 設定管理
+│   │   │   ├── security.py   # セキュリティ設定
+│   │   │   └── database.py   # データベース接続
+│   │   ├── models/           # SQLAlchemy モデル
+│   │   ├── schemas/          # Pydantic スキーマ
+│   │   ├── services/         # ビジネスロジック
+│   │   └── utils/            # ユーティリティ
+│   ├── tests/                # バックエンドテスト
+│   ├── migrations/           # Alembic マイグレーション
+│   └── requirements.txt      # Python 依存関係
+├── docs/                     # ドキュメント
+├── .github/                  # GitHub 設定
+└── docker-compose.yml        # Docker 構成
+```
+
+### 主要コンポーネントの関係性
+
+```
+┌─────────────────┐    ┌─────────────────┐
+│   Next.js App   │    │   Backend API   │
+│   (Frontend)    │    │   (FastAPI)     │
+└─────────┬───────┘    └─────────┬───────┘
+          │                      │
+          │ HTTP/REST API        │
+          │ (JSON)               │
+          └──────────────────────┘
+                                 │
+                    ┌─────────────┴─────────────┐
+                    │   {{DATABASE_TYPE}}       │
+                    │      Database             │
+                    └───────────────────────────┘
+```
+
+### データフロー
+
+1. **クライアントリクエスト**: Next.js App Router が SSR/CSR でページをレンダリング
+2. **API 呼び出し**: フロントエンドから FastAPI バックエンドへ REST API リクエスト
+3. **ビジネスロジック実行**: FastAPI サービス層でビジネスロジックを処理
+4. **データベース操作**: SQLAlchemy ORM を使用して {{DATABASE_TYPE}} にアクセス
+5. **レスポンス返却**: JSON 形式でフロントエンドにデータを返却
+6. **UI 更新**: React コンポーネントが状態を更新し、UI を再レンダリング
+
+## 3. 開発規約とパターン
+
+### コーディングスタイル
+
+#### Next.js/TypeScript (フロントエンド)
+
+- **フォーマット**: Prettier + ESLint を使用
+- **型定義**: TypeScript strict mode 有効
+- **コンポーネント名**: PascalCase（例: `UserProfile`, `AuthButton`）
+- **関数名**: camelCase（例: `getUserData`, `handleSubmit`）
+- **ファイル名**: kebab-case（例: `user-profile.tsx`, `auth-button.tsx`）
+- **定数**: UPPER_SNAKE_CASE（例: `API_BASE_URL`, `MAX_RETRY_COUNT`）
+- **型ファイル**: `*.types.ts` または `types/` ディレクトリ
+
+#### Python/FastAPI (バックエンド)
+
+- **フォーマット**: Ruff (linter + formatter) を使用
+- **関数名**: snake_case（例: `get_user_data`, `create_order`）
+- **クラス名**: PascalCase（例: `UserService`, `OrderRepository`）
+- **型ヒント**: 必須（Python 3.12+ 記法を推奨）
+- **非同期関数**: `async def` を優先的に使用
+
+### 命名規則
+
+#### Next.js コンポーネント
+
+```typescript
+// Page Component (App Router)
+export default function UserProfilePage() { }
+
+// Layout Component
+export default function DashboardLayout({ children }: { children: React.ReactNode }) { }
+
+// UI Component
+export function Button({ variant = 'primary' }: ButtonProps) { }
+
+// Server Component (デフォルト)
+export default async function UserList() { }
+
+// Client Component (明示的)
+'use client'
+export function InteractiveButton() { }
+```
+
+#### ファイル命名
+
+```
+frontend/src/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/
+│   │   │   └── page.tsx           # ページコンポーネント
+│   │   └── layout.tsx             # レイアウト
+│   └── api/
+│       └── users/
+│           └── route.ts           # API ルート
+├── components/
+│   ├── ui/
+│   │   ├── button.tsx             # UI コンポーネント
+│   │   └── input.tsx
+│   └── features/
+│       └── user-profile.tsx       # 機能コンポーネント
+└── lib/
+    └── api-client.ts              # ユーティリティ
+```
+
+### よく使用するパターン
+
+#### 1. Server Component + Client Component パターン
+
+```typescript
+// app/users/page.tsx (Server Component)
+import { UserList } from '@/components/features/user-list'
+
+export default async function UsersPage() {
+  // サーバーサイドでデータフェッチ
+  const users = await fetchUsers()
+
+  return (
+    <div>
+      <h1>Users</h1>
+      <UserList initialData={users} />
+    </div>
+  )
+}
+
+// components/features/user-list.tsx (Client Component)
+'use client'
+import { useState } from 'react'
+
+export function UserList({ initialData }: { initialData: User[] }) {
+  const [users, setUsers] = useState(initialData)
+
+  // クライアントサイドのインタラクション
+  const handleRefresh = async () => {
+    const data = await fetchUsers()
+    setUsers(data)
+  }
+
+  return (
+    <div>
+      <button onClick={handleRefresh}>Refresh</button>
+      {users.map(user => <UserCard key={user.id} user={user} />)}
+    </div>
+  )
+}
+```
+
+#### 2. API Client パターン (Frontend)
+
+```typescript
+// lib/api-client.ts
+class ApiClient {
+  private baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+  async get<T>(endpoint: string): Promise<T> {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      headers: this.getHeaders(),
+    })
+
+    if (!response.ok) {
+      throw new ApiError(response.status, await response.text())
+    }
+
+    return response.json()
+  }
+
+  async post<T>(endpoint: string, data: unknown): Promise<T> {
+    const response = await fetch(`${this.baseURL}${endpoint}`, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      throw new ApiError(response.status, await response.text())
+    }
+
+    return response.json()
+  }
+
+  private getHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      // Authorization header if needed
+    }
+  }
+}
+
+export const apiClient = new ApiClient()
+```
+
+#### 3. FastAPI サービスパターン (Backend)
+
+```python
+# app/services/user_service.py
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.models import User
+from app.schemas import UserCreate, UserUpdate
+
+class UserService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_user(self, user_id: int) -> User | None:
+        result = await self.db.execute(
+            select(User).where(User.id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def create_user(self, user_data: UserCreate) -> User:
+        user = User(**user_data.model_dump())
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+```
+
+#### 4. FastAPI エンドポイントパターン (Backend)
+
+```python
+# app/api/v1/endpoints/users.py
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.api.dependencies import get_db
+from app.services.user_service import UserService
+from app.schemas import User, UserCreate
+
+router = APIRouter()
+
+@router.get("/{user_id}", response_model=User)
+async def get_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    service = UserService(db)
+    user = await service.get_user(user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
+
+@router.post("/", response_model=User, status_code=201)
+async def create_user(
+    user_data: UserCreate,
+    db: AsyncSession = Depends(get_db)
+):
+    service = UserService(db)
+    return await service.create_user(user_data)
+```
+
+## 4. 実用的な情報
+
+### セットアップ手順
+
+#### 前提条件
+
+- Node.js 20+ (Frontend)
+- Python 3.12+ (Backend)
+- {{DATABASE_TYPE}} {{DATABASE_VERSION}}
+- Docker & Docker Compose (推奨)
+
+#### 開発環境構築
+
+```bash
+# リポジトリクローン
+git clone {{REPOSITORY_URL}}
+cd {{PROJECT_NAME}}
+
+# Docker Composeで全体起動 (推奨)
+docker-compose up -d
+
+# または個別にセットアップ
+
+# フロントエンドセットアップ
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
+
+# バックエンドセットアップ
+cd ../backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+alembic upgrade head
+uvicorn app.main:app --reload
+```
+
+### よく使用するコマンド
+
+#### Frontend (Next.js)
+
+```bash
+# 開発サーバー起動
+npm run dev
+
+# ビルド
+npm run build
+
+# 本番サーバー起動
+npm run start
+
+# Lint & Format
+npm run lint
+npm run format
+
+# テスト
+npm run test
+npm run test:watch
+```
+
+#### Backend (FastAPI)
+
+```bash
+# 開発サーバー起動
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# テスト実行
+pytest
+pytest tests/test_specific_file.py::test_function_name  # 単一テスト
+
+# Lint & Format
+ruff check app/ tests/
+ruff format app/ tests/
+mypy .
+
+# データベースマイグレーション
+alembic revision --autogenerate -m "description"
+alembic upgrade head
+alembic downgrade -1
+```
+
+### トラブルシューティング
+
+#### よくある問題
+
+- **Node.js バージョン**: `node -v` で 20+ を確認
+- **Python 仮想環境**: venv が有効化されているか確認
+- **データベース接続エラー**: Docker Compose 起動確認または {{DATABASE_TYPE}} サービス確認
+- **API 接続エラー**: バックエンドサーバーが起動しているか確認
+- **ポート競合**: 3000 (Frontend), 8000 (Backend), {{DATABASE_PORT}} ({{DATABASE_TYPE}}) が使用中でないか確認
+
+#### デバッグ方法
+
+- **Frontend**: Next.js Dev Tools, ブラウザ Console
+- **Backend**: FastAPI 自動ドキュメント `http://localhost:8000/docs`
+- **Database**: {{DATABASE_TYPE}} クライアント ({{DATABASE_CLIENT_TOOLS}})
+
+## Development Commands
+
+### Backend Development (Python FastAPI)
+
+```bash
+cd backend/
+
+# Install dependencies
+pip install -r requirements.txt
+pip install -r requirements-dev.txt  # Development dependencies
+
+# Run tests
+pytest
+pytest --cov=app --cov-report=html  # Coverage report
+
+# Linting and formatting
+ruff check app/ tests/
+ruff format app/ tests/
+mypy .
+
+# Database migrations
+alembic revision --autogenerate -m "description"
+alembic upgrade head
+
+# Run development server locally
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Frontend Development (Next.js)
+
+```bash
+cd frontend/
+
+# Install dependencies
+npm install
+
+# Development server
+npm run dev
+
+# Build and test
+npm run build         # Production build
+npm run start         # Production server
+npm run test          # Run tests
+npm run test:coverage # Coverage report
+
+# Code formatting and analysis
+npm run lint          # ESLint
+npm run format        # Prettier
+npm run type-check    # TypeScript check
+```
+
+## Architecture Overview
+
+### Service Structure
+
+- **Frontend** (`frontend/`): Next.js 15+ App Router application
+- **Backend** (`backend/`): API server (FastAPI + Python 3.12 + {{DATABASE_TYPE}})
+
+### Backend Architecture Patterns
+
+**API Layer**: Resource-based routing with centralized router registration
+
+- Endpoints in `app/api/v1/endpoints/`
+- Router registration in `app/api/v1/router.py`
+- Authentication dependencies in `app/api/dependencies.py`
+
+**Service Layer**: Domain-driven services handling business logic
+
+- Core services in `app/services/`
+- Transaction management with async context managers
+
+**Database Layer**: SQLAlchemy ORM with async support
+
+- Models in `app/models/`
+- Database config in `app/core/database.py`
+- Alembic migrations in `migrations/versions/`
+
+### Frontend Architecture Patterns
+
+**Next.js App Router** (`frontend/src/app/`):
+
+- Server Components by default
+- Client Components with `'use client'` directive
+- Route Groups for logical organization
+- API Routes for BFF pattern (optional)
+
+## Dependency Management
+
+### Python Services
+
+- **pip**: Package management for backend services
+- **Python 3.12**: Consistent version across all services
+- **Key Dependencies**:
+  - FastAPI, SQLAlchemy, Pydantic, Alembic, pytest
+
+### Frontend Services
+
+- **npm**: Package management for Next.js app
+- **Node.js 20+**: Latest LTS version
+- **Key Dependencies**:
+  - Next.js, React, TypeScript, Tailwind CSS, Zustand
+
+## Code Quality Management
+
+### Python Services
+
+- **Ruff**: Unified linter and formatter
+- **MyPy**: Type checking with strict mode
+- **Pytest**: Test execution with {{TEST_COVERAGE_TARGET}}%+ coverage requirement
+
+### Frontend Services
+
+- **ESLint**: Linting with Next.js recommended config
+- **Prettier**: Code formatting
+- **TypeScript**: Strict mode enabled
+- **Jest**: Unit testing
+
+## CI/CD Pipeline
+
+### GitHub Actions Workflows (`.github/workflows/`)
+
+- **PR Checks** (`pr-checks.yml`): Automated testing and linting
+- **Claude PR Review** (`claude-pr-review.yml`): AI-powered code review
+
+### Testing Strategy
+
+- **Backend**: pytest + coverage ({{TEST_COVERAGE_TARGET}}%+ requirement)
+- **Frontend**: Jest + React Testing Library
+- **E2E Tests**: Playwright (optional)
+
+## API Documentation
+
+Start the development server and visit `http://localhost:8000/docs` for interactive API documentation via FastAPI's automatic OpenAPI generation.
+
+## Environment Variables
+
+### Backend (.env)
+
+```bash
+# Database
+DATABASE_URL={{DATABASE_URL_EXAMPLE}}
+
+# Security
+SECRET_KEY=your-secret-key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# CORS
+ALLOWED_ORIGINS=http://localhost:3000
+
+# Application
+DEBUG=True
+LOG_LEVEL=INFO
+```
+
+### Frontend (.env.local)
+
+```bash
+# API
+NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# Application
+NEXT_PUBLIC_APP_NAME={{PROJECT_NAME}}
+```

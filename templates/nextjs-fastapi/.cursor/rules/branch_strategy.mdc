@@ -1,0 +1,36 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# ブランチ戦略
+
+- main: 本番環境用のブランチ
+- develop: 開発環境用のブランチ
+- feature/*: 新機能開発用のブランチ
+- bugfix/*: バグ修正用のブランチ
+- refactor/*: リファクタリング用のブランチ
+- hotfix/*: 本番環境の緊急修正用のブランチ
+
+## ブランチ命名規則
+
+- feature/機能名 (例: feature/user-authentication)
+- bugfix/修正内容 (例: bugfix/login-validation)
+- refactor/リファクタリング内容 (例: refactor/api-client)
+- hotfix/修正内容 (例: hotfix/security-patch)
+
+## マージルール
+
+- feature/* → develop
+- bugfix/* → develop
+- refactor/* → develop
+- develop → main (リリース時)
+- hotfix/* → main, develop
+
+## ブランチ保護
+
+- main ブランチへの直接プッシュは禁止
+- develop ブランチへの直接プッシュは禁止
+- PR レビュー必須（最低1名の承認）
+- CI テスト通過必須
