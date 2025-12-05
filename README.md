@@ -41,7 +41,7 @@ Next.js + FastAPI プロジェクト向けの包括的な開発テンプレー�
 
 ```bash
 # テンプレートリポジトリをクローン
-git clone https://github.com/your-org/spec-driven-dev-template.git
+git clone https://github.com/IwamuraHayato/spec-driven-dev-template.git
 
 # プロジェクトディレクトリにコピー
 cp -r spec-driven-dev-template/templates/nextjs-fastapi/* /path/to/your-project/
@@ -55,7 +55,7 @@ cp -r spec-driven-dev-template/templates/nextjs-fastapi/* /path/to/your-project/
 project:
   name: "MyAwesomeApp"
   description: "次世代 Web アプリケーション"
-  repository_url: "https://github.com/your-org/my-awesome-app"
+  repository_url: "https://github.com/IwamuraHayato/my-awesome-app"
 
 team:
   organization: "Your Organization"

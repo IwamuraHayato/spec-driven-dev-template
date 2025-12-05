@@ -14,10 +14,10 @@
 
 ```bash
 # テンプレートリポジトリをクローン
-git clone https://github.com/your-org/spec-driven-dev-template.git
+git clone https://github.com/IwamuraHayato/spec-driven-dev-template.git
 
 # または、ダウンロードして解凍
-# https://github.com/your-org/spec-driven-dev-template/archive/main.zip
+# https://github.com/IwamuraHayato/spec-driven-dev-template/archive/main.zip
 ```
 
 ### 2. プロジェクトディレクトリを準備
@@ -99,7 +99,7 @@ cp -r /path/to/spec-driven-dev-template/templates/nextjs-fastapi/.* .
 |--------|-----|------|
 | `{{PROJECT_NAME}}` | `my-awesome-app` | プロジェクト名 |
 | `{{PROJECT_DESCRIPTION}}` | `次世代 Web アプリケーション` | プロジェクト説明 |
-| `{{REPOSITORY_URL}}` | `https://github.com/your-org/my-awesome-app` | リポジトリ URL |
+| `{{REPOSITORY_URL}}` | `https://github.com/IwamuraHayato/my-awesome-app` | リポジトリ URL |
 | `{{INFRASTRUCTURE_PLATFORM}}` | `AWS` / `GCP` / `Azure` | インフラプラットフォーム |
 | `{{DATABASE_TYPE}}` | `PostgreSQL` / `MySQL` | データベースの種類 |
 | `{{DATABASE_VERSION}}` | `14+` (PostgreSQL) / `8.0+` (MySQL) | データベースバージョン |
@@ -337,7 +337,7 @@ grep -r "{{" .
 
 質問や問題がある場合:
 
-1. [GitHub Issues](https://github.com/your-org/spec-driven-dev-template/issues) で質問
+1. [GitHub Issues](https://github.com/IwamuraHayato/spec-driven-dev-template/issues) で質問
 2. プロジェクトの `docs/team-development-rules.md` を参照
 3. チームメンバーに相談
 

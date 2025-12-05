@@ -80,7 +80,7 @@ class InteractiveSetup:
 
         self.variables['REPOSITORY_URL'] = self._prompt(
             "Repository URL",
-            f"https://github.com/your-org/{self.variables['PROJECT_NAME']}"
+            f"https://github.com/IwamuraHayato/{self.variables['PROJECT_NAME']}"
         )
 
         self.variables['LICENSE'] = self._prompt(
