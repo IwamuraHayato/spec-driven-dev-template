@@ -37,10 +37,12 @@ tech_stack:
     containerization: "Docker"
 
 features:
-  # List of main features (will be converted to markdown list)
-  - "{{FEATURE_1}}"
-  - "{{FEATURE_2}}"
-  - "{{FEATURE_3}}"
+  # プロジェクトの主要機能をここに記載してください
+  # 例: ユーザー認証、データ分析、レポート生成、API連携など
+  # 以下のプレースホルダーを実際の機能に置き換えてください
+  - "主要機能1を記載"
+  - "主要機能2を記載"
+  - "主要機能3を記載"
 
 team:
   organization: "{{ORGANIZATION_NAME}}"

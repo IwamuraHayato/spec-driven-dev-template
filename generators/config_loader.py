@@ -83,7 +83,13 @@ class ConfigLoader:
 
         # Features list
         features = self.config.get('features', [])
-        features_list = '\n'.join([f"- {feature}" for feature in features if not feature.startswith('{{')])
+        # Filter out placeholder features (starting with {{ or containing "機能" placeholder text)
+        valid_features = [
+            f for f in features
+            if not f.startswith('{{') and '機能' not in f and 'を記載' not in f
+        ]
+        # If no valid features remain, use empty string (user should fill this in)
+        features_list = '\n'.join([f"- {feature}" for feature in valid_features])
         variables['FEATURES_LIST'] = features_list
 
         # Target user description (optional)

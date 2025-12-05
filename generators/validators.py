@@ -243,6 +243,14 @@ class ConfigValidator:
             if not value or value.strip() == '':
                 self.warnings.append(f"{field} is empty. Consider providing a value")
 
+        # Check FEATURES_LIST specifically
+        features_list = self.variables.get('FEATURES_LIST', '')
+        if not features_list or features_list.strip() == '':
+            self.warnings.append(
+                "⚠️ FEATURES_LIST is empty. Please update the 'features' section in template-config.yaml "
+                "with your project's actual features"
+            )
+
 
 def validate_config(variables: Dict[str, str]) -> Tuple[bool, List[str], List[str]]:
     """
