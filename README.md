@@ -30,6 +30,7 @@ Next.js + FastAPI プロジェクト向けの包括的な開発テンプレー�
 ### 5. ドキュメント
 - `docs/dev/REVIEW.md`: コードレビューガイドライン
 - `docs/team-development-rules.md`: チーム開発ルール
+- `docs/OPENAI_INTEGRATION.md`: OpenAI 連携ガイド（オプション）
 
 ### 6. 設定ファイル
 - `template-config.yaml`: プロジェクト変数定義

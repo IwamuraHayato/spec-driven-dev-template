@@ -2,9 +2,66 @@
 
 All notable changes to this template will be documented in this file.
 
+## [1.1.0] - 2025-12-05
+
+### Added - Phase 2: Automation Scripts
+
+#### Generators (自動化スクリプト)
+- ✅ **config_loader.py**: template-config.yaml パーサー
+  - YAML 設定ファイルの読み込み
+  - 変数の抽出と構造化
+  - データベース固有設定のヘルパー関数
+
+- ✅ **template_processor.py**: 変数置換エンジン
+  - テキストファイルの変数置換 (`{{VARIABLE_NAME}}` 形式)
+  - バイナリファイルの自動コピー
+  - `.template` 拡張子の自動削除
+  - 未置換変数の検出とレポート
+  - 除外パターンによるファイルフィルタリング
+
+- ✅ **validators.py**: 設定値バリデーター
+  - 必須フィールドの存在確認
+  - プロジェクト名の形式チェック（kebab-case推奨）
+  - URL形式の検証
+  - データベース設定の妥当性確認
+  - ポート番号の範囲チェック
+  - テストカバレッジ目標の妥当性検証
+  - エラーと警告の分類表示
+
+- ✅ **setup.py**: メイン生成スクリプト
+  - CLI インターフェース（argparse）
+  - 設定の読み込み → バリデーション → 処理 → 検証の完全フロー
+  - `--config`, `--output`, `--template`, `--force`, `--no-validate` オプション
+  - 処理結果サマリーと次のステップ表示
+
+- ✅ **interactive_setup.py**: 対話型セットアップウィザード
+  - ガイド付き質問形式でプロジェクト設定を収集
+  - デフォルト値の提案と選択肢からの選択
+  - 設定ファイルの自動生成（temp-config.yaml）
+  - setup.py の自動呼び出し
+
+- ✅ **requirements.txt**: Python 依存関係（PyYAML）
+- ✅ **generators/README.md**: 生成スクリプトの詳細ドキュメント
+
+#### Documentation Updates
+- ✅ **USAGE.md**: 自動化スクリプトの使用方法を追加
+  - 対話型セットアップ（推奨）
+  - 設定ファイルを使用した生成
+  - 手動セットアップ（上級者向け）に分類
+
+- ✅ **MYSQL_SUPPORT.md**: MySQL 対応完了サマリー
+
+### Improved
+
+- **テンプレート生成の効率化**: 手動置換から自動生成へ（数秒でプロジェクト生成）
+- **エラー検出の強化**: バリデーションにより設定ミスを事前検出
+- **ユーザビリティ向上**: 対話型ウィザードで初心者でも簡単にセットアップ可能
+
+---
+
 ## [1.0.0] - 2025-12-05
 
-### Added
+### Added - Phase 1: Template Extraction
 
 #### Core Templates
 - ✅ **CLAUDE.md.template**: AI 向けプロジェクト指示書

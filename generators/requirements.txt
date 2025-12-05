@@ -1,0 +1,2 @@
+# Requirements for template generators
+PyYAML>=6.0
