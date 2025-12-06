@@ -100,6 +100,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 3. 開発規約とパターン
 
+**重要**: このプロジェクトでは詳細な開発規約を `.cursor/rules/` ディレクトリに配置しています。
+以下はサマリーです。完全な規約は各ファイルを参照してください:
+
+- **コーディングスタイル**: `.cursor/rules/code_style.mdc`
+- **コミットメッセージ**: `.cursor/rules/commit_message.mdc`
+- **ブランチ戦略**: `.cursor/rules/branch_strategy.mdc`
+- **テスト規約**: `.cursor/rules/testing.mdc`
+- **セキュリティ規約**: `.cursor/rules/security.mdc`
+- **ドキュメント作成**: `.cursor/rules/documentation.mdc`
+- **GitHub操作**: `.cursor/rules/github.mdc`
+- **PR要約**: `.cursor/rules/pull_request_summary.mdc`
+
 ### コーディングスタイル
 
 #### Next.js/TypeScript (フロントエンド)
