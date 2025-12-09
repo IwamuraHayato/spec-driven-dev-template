@@ -70,23 +70,27 @@ class InteractiveSetup:
 
         self.variables['PROJECT_NAME'] = self._prompt(
             "Project name (lowercase, use hyphens)",
-            "my-awesome-project"
+            "my-awesome-project",
+            help_text="プロジェクトの識別名（例: my-awesome-app, data-analyzer）"
         )
 
         self.variables['PROJECT_DESCRIPTION'] = self._prompt(
             "Project description",
-            "A modern web application"
+            "A modern web application",
+            help_text="プロジェクトの簡潔な説明（1行程度）"
         )
 
         self.variables['REPOSITORY_URL'] = self._prompt(
             "Repository URL",
-            f"https://github.com/IwamuraHayato/{self.variables['PROJECT_NAME']}"
+            f"https://github.com/IwamuraHayato/{self.variables['PROJECT_NAME']}",
+            help_text="GitHubリポジトリのURL（まだ作成していない場合はデフォルトのまま進めてOK）"
         )
 
         self.variables['LICENSE'] = self._prompt(
             "License",
             "MIT",
-            choices=["MIT", "Apache 2.0", "Proprietary", "Other"]
+            choices=["MIT", "Apache 2.0", "Proprietary", "Other"],
+            help_text="ソフトウェアライセンスの種類"
         )
 
     def _setup_tech_stack(self):
@@ -97,19 +101,28 @@ class InteractiveSetup:
         # Database
         db_type = self._prompt(
             "Database type",
-            "PostgreSQL",
-            choices=["PostgreSQL", "MySQL"]
+            "MySQL",
+            choices=["PostgreSQL", "MySQL"],
+            help_text="使用するデータベースの種類"
         )
         self.variables['DATABASE_TYPE'] = db_type
 
         # Database version
         if db_type == "PostgreSQL":
-            self.variables['DATABASE_VERSION'] = self._prompt("PostgreSQL version", "14+")
+            self.variables['DATABASE_VERSION'] = self._prompt(
+                "PostgreSQL version",
+                "14+",
+                help_text="PostgreSQLのバージョン（推奨: 14以上）"
+            )
             self.variables['DATABASE_PORT'] = "5432"
             self.variables['DATABASE_CLIENT_TOOLS'] = "psql, pgAdmin, DBeaver"
             self.variables['DATABASE_URL_EXAMPLE'] = "postgresql+asyncpg://user:password@localhost:5432/dbname"
         else:  # MySQL
-            self.variables['DATABASE_VERSION'] = self._prompt("MySQL version", "8.0+")
+            self.variables['DATABASE_VERSION'] = self._prompt(
+                "MySQL version",
+                "8.0+",
+                help_text="MySQLのバージョン（推奨: 8.0以上）"
+            )
             self.variables['DATABASE_PORT'] = "3306"
             self.variables['DATABASE_CLIENT_TOOLS'] = "mysql, MySQL Workbench, DBeaver"
             self.variables['DATABASE_URL_EXAMPLE'] = "mysql+aiomysql://user:password@localhost:3306/dbname"
@@ -118,7 +131,8 @@ class InteractiveSetup:
         self.variables['INFRASTRUCTURE_PLATFORM'] = self._prompt(
             "Infrastructure platform",
             "AWS",
-            choices=["AWS", "GCP", "Azure", "On-Premise", "Docker"]
+            choices=["AWS", "GCP", "Azure", "On-Premise", "Docker"],
+            help_text="デプロイ先のインフラプラットフォーム"
         )
 
     def _setup_team_info(self):
@@ -128,23 +142,27 @@ class InteractiveSetup:
 
         self.variables['ORGANIZATION_NAME'] = self._prompt(
             "Organization name",
-            "Your Company"
+            "Your Company",
+            help_text="組織・会社名"
         )
 
         self.variables['PM_NAME'] = self._prompt(
             "Project Manager name",
-            "山田太郎"
+            "山田太郎",
+            help_text="プロジェクトマネージャーの名前"
         )
 
         self.variables['TECH_LEAD_NAME'] = self._prompt(
             "Technical Lead name",
-            "鈴木花子"
+            "鈴木花子",
+            help_text="技術リーダーの名前"
         )
 
     def _setup_features(self):
         """Setup project features."""
         print("\n✨ Main Features")
         print("-" * 70)
+        print("  ℹ️  プロジェクトの主要機能を入力してください（例: ユーザー認証、データ分析、レポート生成）")
         print("Enter main features (one per line, empty line to finish):")
 
         features = []
@@ -158,7 +176,7 @@ class InteractiveSetup:
 
         if not features:
             features = ["ユーザー認証機能", "データダッシュボード", "レポート生成機能"]
-            print(f"Using default features: {', '.join(features)}")
+            print(f"  Using default features: {', '.join(features)}")
 
         self.variables['FEATURES_LIST'] = '\n'.join([f"- {f}" for f in features])
 
@@ -172,7 +190,8 @@ class InteractiveSetup:
 
         coverage = self._prompt(
             "Test coverage target (%)",
-            "80"
+            "80",
+            help_text="テストカバレッジの目標値（0-100の数値）"
         )
 
         try:
@@ -188,7 +207,8 @@ class InteractiveSetup:
 
         self.variables['TARGET_USER_DESCRIPTION'] = self._prompt(
             "Target user description",
-            "エンドユーザー向けサービス利用者"
+            "エンドユーザー向けサービス利用者",
+            help_text="ターゲットユーザーの説明（例: 企業の経営者、エンドユーザー）"
         )
 
     def _setup_output(self):
@@ -199,13 +219,15 @@ class InteractiveSetup:
         default_output = f"../{self.variables['PROJECT_NAME']}"
         self.output_dir = self._prompt(
             "Output directory",
-            default_output
+            default_output,
+            help_text="プロジェクトを生成するディレクトリ（相対パスまたは絶対パス）"
         )
 
         self.template_name = self._prompt(
             "Template name",
             "nextjs-fastapi",
-            choices=["nextjs-fastapi"]
+            choices=["nextjs-fastapi"],
+            help_text="使用するテンプレートの種類（現在はNext.js + FastAPIのみ対応）"
         )
 
     def _confirm_and_generate(self) -> bool:
@@ -326,7 +348,7 @@ class InteractiveSetup:
 
         return temp_config_path
 
-    def _prompt(self, question: str, default: str = "", choices: list = None) -> str:
+    def _prompt(self, question: str, default: str = "", choices: list = None, help_text: str = None) -> str:
         """
         Prompt user for input.
 
@@ -334,10 +356,15 @@ class InteractiveSetup:
             question: Question to ask
             default: Default value
             choices: List of valid choices (optional)
+            help_text: Help text to display (optional)
 
         Returns:
             User input or default value
         """
+        # Display help text if provided
+        if help_text:
+            print(f"  ℹ️  {help_text}")
+
         if choices:
             choices_str = " (" + "/".join(choices) + ")"
         else:
