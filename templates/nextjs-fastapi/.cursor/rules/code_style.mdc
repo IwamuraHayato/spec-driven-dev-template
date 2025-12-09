@@ -1,25 +1,79 @@
 ---
-description:
+description: Code style and formatting guidelines
 globs:
 alwaysApply: true
 ---
 
 # コードスタイルとフォーマット
 
-- フロントエンド（Next.js/TypeScript）:
+## フロントエンド（Next.js/TypeScript）
 
-  - Prettier + ESLint を使用したコードフォーマット
-  - コンポーネント名は PascalCase で命名
-  - 関数名は camelCase で命名
-  - ファイル名は kebab-case で命名
-  - 定数は UPPER_SNAKE_CASE で命名
-  - 型定義ファイルは `*.types.ts` または `types/` ディレクトリ
-  - Server Component はデフォルト、Client Component は `'use client'` ディレクティブを使用
+### フォーマット・リント
 
-- バックエンド（Python/FastAPI）:
+- Prettier + ESLint を使用したコードフォーマット
 
-  - Ruff を使用したコードフォーマット・リント
-  - 関数名は snake_case
-  - クラス名は PascalCase
-  - 型ヒントは必須（Python 3.12+ 記法を推奨）
-  - 非同期関数は `async def` を優先的に使用
+### 命名規則
+
+| 対象 | スタイル | 例 |
+|------|----------|-----|
+| コンポーネント名 | PascalCase | `UserProfile`, `AuthButton` |
+| 関数名 | camelCase | `getUserData`, `handleSubmit` |
+| ファイル名 | kebab-case | `user-profile.tsx`, `api-client.ts` |
+| 定数 | UPPER_SNAKE_CASE | `API_BASE_URL`, `MAX_RETRY_COUNT` |
+| 型定義ファイル | `*.types.ts` または `types/` | `user.types.ts` |
+
+### 真偽値の命名
+
+```typescript
+// 良い例: 明確な接頭辞を使用
+const isActive = true
+const hasPermission = false
+const canEdit = user.isAdmin()
+const shouldRetry = errorCount < MAX_RETRIES
+
+// 悪い例
+const active = true  // isActive の方が明確
+```
+
+### コンポーネント規約
+
+- Server Component はデフォルト
+- Client Component は `'use client'` ディレクティブを使用
+
+## バックエンド（Python/FastAPI）
+
+### フォーマット・リント
+
+- Ruff を使用したコードフォーマット・リント
+- MyPy による型チェック
+
+### 命名規則
+
+| 対象 | スタイル | 例 |
+|------|----------|-----|
+| 関数名 | snake_case | `get_user_data`, `create_order` |
+| クラス名 | PascalCase | `UserService`, `OrderRepository` |
+| 定数 | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT`, `API_TIMEOUT` |
+| プライベート属性 | `_` 接頭辞 | `_balance`, `_validate_amount` |
+
+### 真偽値の命名
+
+```python
+# 良い例: 明確な接頭辞を使用
+is_active = True
+has_permission = False
+can_edit = user.is_admin()
+should_retry = error_count < MAX_RETRIES
+
+# 悪い例
+active = True  # is_active の方が明確
+```
+
+### 型ヒント
+
+- 型ヒントは必須（Python 3.12+ 記法を推奨）
+- 非同期関数は `async def` を優先的に使用
+
+### 詳細規約
+
+Python の詳細なコーディング規約は `.cursor/rules/python_coding.mdc` を参照してください。

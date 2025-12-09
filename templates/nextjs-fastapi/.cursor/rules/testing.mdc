@@ -114,3 +114,103 @@ pytest --cov=app           # カバレッジレポート生成
 - データベースのテスト用データをセットアップ
 - モック・スタブを適切に使用
 - テスト間の独立性を保つ（各テストでクリーンアップ）
+
+## 例外のテスト
+
+```python
+import pytest
+
+def test_invalid_email_raises_error():
+    """無効なメールアドレスで例外が発生することを確認"""
+    with pytest.raises(ValueError) as exc_info:
+        validate_email("invalid-email")
+
+    assert "無効なメールアドレス" in str(exc_info.value)
+
+def test_user_not_found_raises_404():
+    """存在しないユーザーで404エラーが発生することを確認"""
+    with pytest.raises(HTTPException) as exc_info:
+        get_user(user_id=99999)
+
+    assert exc_info.value.status_code == 404
+```
+
+## モックを使ったテスト
+
+```python
+from unittest.mock import Mock, patch, AsyncMock
+
+@pytest.mark.asyncio
+async def test_send_email_called():
+    """メール送信が呼び出されることを確認"""
+    with patch("app.services.email.send_email") as mock_send:
+        mock_send.return_value = True
+
+        result = await register_user("test@example.com", "password123")
+
+        mock_send.assert_called_once_with(
+            to="test@example.com",
+            subject="登録ありがとうございます"
+        )
+        assert result.email == "test@example.com"
+
+@pytest.mark.asyncio
+async def test_external_api_mock():
+    """外部APIをモックしてテスト"""
+    mock_response = {"status": "success", "data": {"id": 123}}
+
+    with patch("app.services.external_api.fetch") as mock_fetch:
+        mock_fetch.return_value = AsyncMock(return_value=mock_response)()
+
+        result = await process_external_data()
+
+        assert result["id"] == 123
+```
+
+## フィクスチャの活用
+
+```python
+import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
+
+@pytest.fixture
+async def db_session():
+    """テスト用データベースセッション"""
+    async with AsyncSession(engine) as session:
+        yield session
+        await session.rollback()
+
+@pytest.fixture
+def sample_user():
+    """テスト用ユーザーデータ"""
+    return {
+        "email": "test@example.com",
+        "name": "Test User",
+        "password": "securepassword123"
+    }
+
+@pytest.mark.asyncio
+async def test_create_user(db_session: AsyncSession, sample_user: dict):
+    """ユーザー作成のテスト"""
+    user = await create_user(db_session, **sample_user)
+
+    assert user.email == sample_user["email"]
+    assert user.name == sample_user["name"]
+```
+
+## カバレッジの確認
+
+```bash
+# カバレッジレポートの生成
+pytest --cov=app --cov-report=html --cov-report=term-missing
+
+# 特定のカバレッジ閾値を設定
+pytest --cov=app --cov-fail-under=80
+```
+
+## テストのベストプラクティス
+
+- **AAA パターン**: Arrange（準備）→ Act（実行）→ Assert（検証）
+- **1テスト1アサーション**: 各テストは1つの振る舞いを検証
+- **テスト名は説明的に**: `test_user_creation_with_valid_data_succeeds`
+- **テストデータは明示的に**: マジックナンバーを避ける

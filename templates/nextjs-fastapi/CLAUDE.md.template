@@ -104,6 +104,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 以下はサマリーです。完全な規約は各ファイルを参照してください:
 
 - **コーディングスタイル**: `.cursor/rules/code_style.mdc`
+- **Pythonコーディング規約**: `.cursor/rules/python_coding.mdc`
 - **コミットメッセージ**: `.cursor/rules/commit_message.mdc`
 - **ブランチ戦略**: `.cursor/rules/branch_strategy.mdc`
 - **テスト規約**: `.cursor/rules/testing.mdc`
