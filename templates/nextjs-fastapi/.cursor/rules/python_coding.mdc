@@ -1,0 +1,273 @@
+---
+description: Python/FastAPI backend coding standards
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# Python コーディング規約
+
+PEP 8 および Google Style Guide に準拠した Python コーディング規約です。
+
+## 1. 命名規則
+
+### 基本ルール
+
+```python
+# 変数と関数: snake_case
+user_name = "田中太郎"
+total_count = 100
+
+def calculate_discount_price(original_price: float, discount_rate: float) -> float:
+    return original_price * (1 - discount_rate)
+
+# クラス: PascalCase
+class UserManager:
+    pass
+
+class OrderProcessor:
+    pass
+
+# 定数: UPPER_SNAKE_CASE
+MAX_RETRY_COUNT = 3
+API_TIMEOUT_SECONDS = 30
+DEFAULT_ENCODING = "utf-8"
+```
+
+### プライベート変数・メソッド
+
+```python
+class BankAccount:
+    def __init__(self):
+        self._balance = 0  # プライベート属性（単一アンダースコア）
+        self.__account_number = None  # 強いプライベート属性（名前マングリング）
+
+    def _validate_amount(self, amount: float) -> bool:  # プライベートメソッド
+        return amount > 0
+
+    def deposit(self, amount: float) -> None:  # パブリックメソッド
+        if self._validate_amount(amount):
+            self._balance += amount
+```
+
+### 真偽値の命名
+
+```python
+# 良い例: 明確な接頭辞を使用
+is_active = True
+has_permission = False
+can_edit = user.is_admin()
+should_retry = error_count < MAX_RETRIES
+
+# 悪い例: 真偽値とわかりにくい
+active = True
+permission = False
+```
+
+## 2. 型ヒント
+
+型ヒントは必須です。Python 3.12+ 記法を推奨します。
+
+```python
+from typing import Optional
+
+# 基本的な型ヒント
+def calculate_average(numbers: list[float]) -> float:
+    return sum(numbers) / len(numbers)
+
+# Noneを返す可能性がある場合
+def get_user(user_id: int) -> dict[str, str] | None:
+    user = database.find(user_id)
+    return user if user else None
+
+# 複数の型を受け取る場合
+def process_data(data: str | bytes) -> str:
+    if isinstance(data, bytes):
+        return data.decode("utf-8")
+    return data
+```
+
+## 3. Docstring（Google Style）
+
+```python
+def calculate_discount(
+    original_price: float,
+    discount_rate: float,
+    member_rank: str = "regular"
+) -> float:
+    """商品の割引後価格を計算する。
+
+    会員ランクに応じた追加割引を適用し、最終的な価格を返す。
+    割引率は0.0〜1.0の範囲で指定する。
+
+    Args:
+        original_price: 元の価格（税込）
+        discount_rate: 基本割引率（0.0〜1.0）
+        member_rank: 会員ランク（"regular", "silver", "gold"）
+
+    Returns:
+        割引後の価格
+
+    Raises:
+        ValueError: 割引率が範囲外の場合
+
+    Examples:
+        >>> calculate_discount(1000, 0.1, "regular")
+        900.0
+    """
+    if not 0 <= discount_rate <= 1:
+        raise ValueError("割引率は0.0〜1.0の範囲で指定してください")
+
+    rank_bonus = {"regular": 0, "silver": 0.05, "gold": 0.1}
+    total_discount = discount_rate + rank_bonus.get(member_rank, 0)
+    return original_price * (1 - total_discount)
+```
+
+## 4. インラインコメント
+
+「なぜ」を説明するコメントを書く。自明なコメントは不要。
+
+```python
+def process_payment(amount: float) -> bool:
+    # APIレート制限を回避するため、リトライ間隔を徐々に延ばす
+    for retry in range(MAX_RETRIES):
+        try:
+            return payment_api.charge(amount)
+        except RateLimitError:
+            time.sleep(2 ** retry)  # 指数バックオフ
+
+    # ビジネスルール: 3回失敗したら手動確認に回す
+    notify_admin(f"決済処理失敗: {amount}円")
+    return False
+```
+
+## 5. 単一責任の原則（SRP）
+
+1つの関数は1つの責任のみを持つ。
+
+```python
+# 良い例: 各責任を分離
+def process_user_registration(email: str, password: str) -> User:
+    """ユーザー登録のメインフロー"""
+    validate_user_input(email, password)
+    user = create_user(email, password)
+    send_welcome_email(user.email)
+    log_registration(user)
+    return user
+
+def validate_user_input(email: str, password: str) -> None:
+    """ユーザー入力のバリデーション"""
+    if "@" not in email:
+        raise ValueError("無効なメールアドレス")
+    if len(password) < 8:
+        raise ValueError("パスワードは8文字以上")
+
+def create_user(email: str, password: str) -> User:
+    """ユーザーをデータベースに作成"""
+    hashed_password = hash_password(password)
+    return User.objects.create(email=email, password=hashed_password)
+```
+
+## 6. 早期リターン（ガード節）
+
+ネストを減らすために早期リターンを使用する。
+
+```python
+# 良い例: 早期リターンでネスト解消
+def get_discount_rate(user: User | None) -> float:
+    """ユーザーの割引率を取得"""
+    if user is None:
+        return 0.0
+
+    if not user.is_member:
+        return 0.05
+
+    if user.order_count <= 10:
+        return 0.1
+
+    if user.total_spent > 100000:
+        return 0.2
+
+    return 0.15
+```
+
+## 7. 引数の設計
+
+引数が多すぎる場合はデータクラスでまとめる。
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class UserData:
+    name: str
+    email: str
+    age: int
+    address: str
+    phone: str
+
+def create_user(user_data: UserData) -> User:
+    """ユーザーを作成"""
+    pass
+```
+
+## 8. 比較構文
+
+```python
+# None, True, False の比較は is/is not を使用
+if value is None:
+    pass
+
+# 真偽値の簡潔な書き方
+if flag:  # if flag is True: より簡潔
+    pass
+
+if not flag:  # if flag is False: より簡潔
+    pass
+```
+
+## 9. Pythonic イディオム
+
+```python
+# リスト内包表記
+squares = [x ** 2 for x in range(10)]
+
+# enumerate の活用
+for index, value in enumerate(items):
+    print(f"{index}: {value}")
+
+# zip の活用
+for name, score in zip(names, scores):
+    print(f"{name}: {score}")
+
+# 辞書内包表記
+user_dict = {user.id: user for user in users}
+```
+
+## 10. 関数の長さとネスト
+
+- 関数は20〜30行以内を目安
+- ネストは3レベルまで
+- 複雑な処理は別関数に分割
+
+## 11. EAFP（Easier to Ask for Forgiveness than Permission）
+
+Python では「許可を求めるより許しを請う」スタイルを推奨。
+
+```python
+# Pythonic: EAFP
+try:
+    value = my_dict[key]
+except KeyError:
+    value = default_value
+
+# 非Pythonic: LBYL（Look Before You Leap）
+if key in my_dict:
+    value = my_dict[key]
+else:
+    value = default_value
+```
+
+## 参考資料
+
+- [PEP 8](https://pep8-ja.readthedocs.io/ja/latest/)
+- [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)

@@ -1,5 +1,5 @@
 ---
-description:
+description: Security guidelines and best practices
 globs:
 alwaysApply: true
 ---
@@ -15,16 +15,61 @@ alwaysApply: true
 
 ## 環境変数管理
 
-- 機密情報は必ず環境変数で管理
+機密情報は必ず環境変数で管理する。
+
+```python
+import os
+
+# 良い例: 環境変数から取得
+API_KEY = os.getenv("API_KEY")
+DATABASE_PASSWORD = os.getenv("DB_PASSWORD")
+
+# デフォルト値の設定（機密情報以外）
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///default.db")
+
+# 必須の環境変数チェック
+if not API_KEY:
+    raise ValueError("API_KEY が設定されていません")
+```
+
 - `.env` ファイルは `.gitignore` に追加
 - `.env.example` ファイルでテンプレートを提供
-- 本番環境では環境変数を適切に設定
 
 ## データベースセキュリティ
 
-- SQL インジェクション対策: SQLAlchemy ORM を使用
-- パスワードは必ずハッシュ化（bcrypt 推奨）
-- データベース接続文字列は環境変数で管理
+### SQL インジェクション対策
+
+```python
+# 危険: 文字列連結でSQL作成
+def get_user_unsafe(email: str):
+    query = f"SELECT * FROM users WHERE email = '{email}'"  # 危険!
+    return db.execute(query)
+
+# 良い例: プレースホルダーを使用
+def get_user_safe(email: str):
+    query = "SELECT * FROM users WHERE email = :email"
+    return db.execute(query, {"email": email})
+
+# 良い例: SQLAlchemy ORM を使用
+def get_user_orm(email: str):
+    return db.query(User).filter(User.email == email).first()
+```
+
+### パスワードのハッシュ化
+
+```python
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    """パスワードをハッシュ化"""
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """パスワードを検証"""
+    return pwd_context.verify(plain_password, hashed_password)
+```
 
 ## API セキュリティ
 
@@ -32,6 +77,32 @@ alwaysApply: true
 - レート制限の実装
 - 入力バリデーション（Pydantic スキーマ）
 - エラーメッセージで機密情報を漏らさない
+
+### 入力バリデーション
+
+```python
+import re
+from pydantic import BaseModel, field_validator
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(pattern, v):
+            raise ValueError("無効なメールアドレス形式です")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("パスワードは8文字以上必要です")
+        return v
+```
 
 ## フロントエンドセキュリティ
 
@@ -47,6 +118,25 @@ alwaysApply: true
 - セキュリティアラートへの迅速な対応
 
 ## ログとモニタリング
+
+```python
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+def process_login(email: str, password: str) -> bool:
+    try:
+        user = authenticate(email, password)
+        logging.info(f"ログイン成功: {email}")
+        return True
+    except AuthenticationError:
+        # パスワードはログに出力しない
+        logging.warning(f"ログイン失敗: {email}")
+        return False
+```
 
 - 機密情報（パスワード、トークン）をログに出力しない
 - 認証・認可の失敗をログに記録
