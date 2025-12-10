@@ -27,6 +27,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **管理者**: サービス運営・管理を行うスタッフ
 - **開発者**: アプリケーション開発・保守を行うエンジニア
 
+### 仕様駆動開発（Spec Kit）
+
+このプロジェクトでは [Spec Kit](https://github.com/github/spec-kit) を使用した仕様駆動開発を推奨しています。
+
+#### Spec Kit コマンド
+
+| コマンド | 目的 | 出力 |
+|---|---|---|
+| `/speckit.constitution` | プロジェクト原則の策定 | `.speckit/constitution.md` |
+| `/speckit.specify` | 要件定義・ユーザーストーリー | `specs/[feature]/spec.md` |
+| `/speckit.plan` | 技術設計・実装計画 | `specs/[feature]/plan.md` |
+| `/speckit.tasks` | タスク分解 | `specs/[feature]/tasks.md` |
+| `/speckit.implement` | 実装実行 | 実装コード |
+
+#### 仕様ディレクトリ構造
+
+```
+specs/
+└── [feature-branch]/
+    ├── spec.md              # ユーザーストーリー・受け入れ基準
+    ├── plan.md              # 実装計画・フェーズ分割
+    ├── data-model.md        # エンティティ・スキーマ定義
+    ├── contracts/           # APIスキーマ・イベント定義
+    └── tasks.md             # 実行可能タスクリスト
+```
+
+#### 開発フロー
+
+```
+1. /speckit.specify   → 要件を定義
+2. /speckit.plan      → 技術設計を策定
+3. /speckit.tasks     → タスクを分解
+4. /speckit.implement → 実装（.cursor/rules/ の規約に従う）
+5. PR作成・レビュー   → .github/ テンプレートを使用
+```
+
+> **Note**: Spec Kit は任意のツールです。使用しない場合は、このセクションを削除してください。
+
 ## 2. アーキテクチャの説明
 
 ### ディレクトリ構造
