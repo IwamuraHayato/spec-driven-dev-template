@@ -37,9 +37,7 @@ Next.js + FastAPI プロジェクト向けの包括的な開発テンプレー�
 
 ## 🚀 使い方
 
-### クイックスタート（推奨）
-
-**対話型セットアップで30秒-2分で完了！**
+### クイックスタート
 
 ```bash
 # 1. テンプレートをクローン
@@ -53,41 +51,9 @@ pip install -r requirements.txt
 python interactive_setup.py
 ```
 
-質問に答えていくだけで、プロジェクトが自動生成されます。
+質問に答えていくだけで、**30秒〜2分**でプロジェクトが自動生成されます。
 
-### 詳細な使い方
-
-#### 方法 1: 対話型セットアップ（推奨）
-
-```bash
-cd generators/
-python interactive_setup.py
-```
-
-- ✅ ガイド付きの質問形式
-- ✅ デフォルト値の提案
-- ✅ 選択肢からの選択
-- ✅ 自動バリデーション
-
-#### 方法 2: 設定ファイルを使用
-
-```bash
-cd generators/
-
-# template-config.yaml を編集してから実行
-python setup.py \
-  --config ../templates/nextjs-fastapi/template-config.yaml \
-  --output ../../my-new-project
-```
-
-**利用可能なオプション**:
-- `--config`: 設定ファイルへのパス（必須）
-- `--output`: 出力ディレクトリ（必須）
-- `--template`: 使用するテンプレート（デフォルト: nextjs-fastapi）
-- `--force`: 既存ディレクトリを上書き
-- `--no-validate`: バリデーションをスキップ（非推奨）
-
-詳細は [USAGE.md](USAGE.md) を参照してください。
+詳細な使い方、手動セットアップ、カスタマイズ方法については **[USAGE.md](USAGE.md)** を参照してください。
 
 ## 📋 テンプレートの構造
 
@@ -170,66 +136,20 @@ domain_specific:
 
 このテンプレートは [Spec Kit](https://github.com/github/spec-kit) と組み合わせて使用することで、仕様駆動開発の全フェーズをカバーできます。
 
-### 役割分担
-
 | ツール | 役割 | タイミング |
 |---|---|---|
 | **本テンプレート** | 開発環境・規約の初期化 | プロジェクト開始時（1回） |
 | **Spec Kit** | 要件定義・設計・タスク化 | 機能追加ごと（繰り返し） |
 
-### 併用フロー
-
-```bash
-# Step 1: 本テンプレートでプロジェクト初期化
-git clone https://github.com/IwamuraHayato/spec-driven-dev-template.git
-cd spec-driven-dev-template/generators/
-pip install -r requirements.txt
-python interactive_setup.py
-# → .cursor/rules/, .github/, CLAUDE.md などが生成される
-
-# Step 2: Spec Kit を初期化
-cd ../my-new-project/
-specify init . --ai claude --force
-# → .speckit/, specs/ ディレクトリが追加される
-
-# Step 3: 機能開発サイクル（繰り返し）
-# Claude Code 上で実行:
-/speckit.specify   # 要件定義
-/speckit.plan      # 技術設計
-/speckit.tasks     # タスク分解
-/speckit.implement # 実装（.cursor/rules/ の規約に従う）
+```
+本テンプレート          Spec Kit
+     │                    │
+     ▼                    ▼
+「どう開発するか」     「何を開発するか」
+ (規約・環境)          (要件・設計・タスク)
 ```
 
-### 統合後のディレクトリ構造
-
-```
-my-project/
-├── .speckit/                    # Spec Kit（プロジェクト原則）
-│   └── constitution.md
-├── specs/                       # Spec Kit（機能仕様）
-│   └── feature-xxx/
-│       ├── spec.md
-│       ├── plan.md
-│       └── tasks.md
-├── .cursor/rules/               # 本テンプレート（コーディング規約）
-├── .github/                     # 本テンプレート（Issue/PR/CI）
-├── docs/                        # 本テンプレート（チームルール）
-├── CLAUDE.md                    # 本テンプレート（AI指示書）
-├── frontend/                    # 実装コード
-└── backend/                     # 実装コード
-```
-
-### Spec Kit のインストール
-
-```bash
-# 推奨: 永続インストール
-uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
-
-# または一時使用
-uvx --from git+https://github.com/github/spec-kit.git specify init .
-```
-
-詳細は [Spec Kit 公式リポジトリ](https://github.com/github/spec-kit) を参照してください。
+併用フロー、インストール方法、統合後のディレクトリ構造については **[USAGE.md](USAGE.md#-spec-kit-との併用)** を参照してください。
 
 ## 📚 参考プロジェクト
 
