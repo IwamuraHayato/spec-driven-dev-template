@@ -191,7 +191,7 @@ class InteractiveSetup:
         coverage = self._prompt(
             "Test coverage target (%)",
             "80",
-            help_text="テストカバレッジの目標値（0-100の数値）"
+            help_text="テストカバレッジの目標値（推奨: 80%、最低60%、高品質プロジェクトは90%以上）"
         )
 
         try:
