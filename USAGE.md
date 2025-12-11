@@ -341,8 +341,86 @@ grep -r "{{" .
 2. プロジェクトの `docs/team-development-rules.md` を参照
 3. チームメンバーに相談
 
+## 🔗 Spec Kit との併用
+
+このテンプレートは [Spec Kit](https://github.com/github/spec-kit) と組み合わせて使用することで、仕様駆動開発の全フェーズをカバーできます。
+
+### 役割分担
+
+| ツール | 役割 | タイミング |
+|---|---|---|
+| **本テンプレート** | 開発環境・規約の初期化 | プロジェクト開始時（1回） |
+| **Spec Kit** | 要件定義・設計・タスク化 | 機能追加ごと（繰り返し） |
+
+### Spec Kit のインストール
+
+```bash
+# 推奨: 永続インストール
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+
+# または一時使用
+uvx --from git+https://github.com/github/spec-kit.git specify init .
+```
+
+### 併用フロー
+
+```bash
+# Step 1: 本テンプレートでプロジェクト初期化
+git clone https://github.com/IwamuraHayato/spec-driven-dev-template.git
+cd spec-driven-dev-template/generators/
+pip install -r requirements.txt
+python interactive_setup.py
+# → .cursor/rules/, .github/, CLAUDE.md などが生成される
+
+# Step 2: Spec Kit を初期化
+cd ../my-new-project/
+specify init . --ai claude --force
+# → .speckit/, specs/ ディレクトリが追加される
+
+# Step 3: 機能開発サイクル（繰り返し）
+# Claude Code 上で実行:
+/speckit.specify   # 要件定義
+/speckit.plan      # 技術設計
+/speckit.tasks     # タスク分解
+/speckit.implement # 実装（.cursor/rules/ の規約に従う）
+```
+
+### 統合後のディレクトリ構造
+
+```
+my-project/
+├── .speckit/                    # Spec Kit（プロジェクト原則）
+│   └── constitution.md
+├── specs/                       # Spec Kit（機能仕様）
+│   └── feature-xxx/
+│       ├── spec.md              # ユーザーストーリー・受け入れ基準
+│       ├── plan.md              # 実装計画・フェーズ分割
+│       ├── data-model.md        # エンティティ・スキーマ定義
+│       ├── contracts/           # APIスキーマ・イベント定義
+│       └── tasks.md             # 実行可能タスクリスト
+├── .cursor/rules/               # 本テンプレート（コーディング規約）
+├── .github/                     # 本テンプレート（Issue/PR/CI）
+├── docs/                        # 本テンプレート（チームルール）
+├── CLAUDE.md                    # 本テンプレート（AI指示書）
+├── frontend/                    # 実装コード
+└── backend/                     # 実装コード
+```
+
+### Spec Kit コマンド一覧
+
+| コマンド | 目的 | 出力 |
+|---|---|---|
+| `/speckit.constitution` | プロジェクト原則の策定 | `.speckit/constitution.md` |
+| `/speckit.specify` | 要件定義・ユーザーストーリー | `specs/[feature]/spec.md` |
+| `/speckit.plan` | 技術設計・実装計画 | `specs/[feature]/plan.md` |
+| `/speckit.tasks` | タスク分解 | `specs/[feature]/tasks.md` |
+| `/speckit.implement` | 実装実行 | 実装コード |
+
+詳細は [Spec Kit 公式リポジトリ](https://github.com/github/spec-kit) を参照してください。
+
 ## 📖 関連ドキュメント
 
 - [README.md](README.md): テンプレートの概要
+- [Spec Kit](https://github.com/github/spec-kit): 仕様駆動開発ツールキット
 - [templates/nextjs-fastapi/CLAUDE.md.template](templates/nextjs-fastapi/CLAUDE.md.template): AI 向け指示書のサンプル
 - [templates/nextjs-fastapi/docs/team-development-rules.md.template](templates/nextjs-fastapi/docs/team-development-rules.md.template): チーム開発ルールのサンプル
