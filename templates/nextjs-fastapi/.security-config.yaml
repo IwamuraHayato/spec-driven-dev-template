@@ -1,0 +1,109 @@
+# Next.js + FastAPI テンプレート用セキュリティ設定
+
+security:
+  # 対象言語
+  languages:
+    - python
+    - typescript
+
+  # Bandit設定（Python用）
+  bandit:
+    enabled: true
+    exclude_dirs:
+      - backend/tests
+      - backend/alembic/versions  # マイグレーションファイル
+      - backend/.venv
+    severity: MEDIUM  # MEDIUM以上を検出
+    confidence: MEDIUM
+
+  # Semgrep設定
+  semgrep:
+    # Python用ルール
+    python:
+      enabled: true
+      target_paths:
+        - backend/
+      rules:
+        # IPA 1-(i) SQLインジェクション
+        - ipa-sql-injection-string-format
+        - ipa-sql-injection-raw-query
+
+        # IPA 2-(i) OSコマンドインジェクション
+        - ipa-os-command-injection-shell-true
+        - ipa-os-command-injection-string-format
+
+        # IPA 3-(i) ディレクトリトラバーサル
+        - ipa-path-traversal-user-input
+        - ipa-path-traversal-no-validation
+
+        # IPA 4 セッション管理
+        - ipa-weak-session-id
+        - ipa-session-cookie-no-httponly
+        - ipa-session-cookie-no-secure
+
+        # IPA 5 XSS対策
+        - ipa-xss-dangerous-url-schemes
+        - ipa-xss-eval-usage
+
+        # IPA 7 HTTPヘッダインジェクション
+        - ipa-header-injection-newline
+
+        # IPA 8 メールヘッダインジェクション
+        - ipa-email-header-injection
+
+        # その他
+        - ipa-hardcoded-secrets
+        - ipa-weak-hash-algorithm
+        - ipa-password-without-salt
+
+    # TypeScript用ルール
+    typescript:
+      enabled: true
+      target_paths:
+        - frontend/
+      rules:
+        # IPA 5-(i) XSS対策
+        - ipa-xss-dangerously-set-inner-html
+        - ipa-xss-inner-html-assignment
+        - ipa-xss-dangerous-url-scheme
+        - ipa-xss-javascript-protocol
+        - ipa-xss-eval-usage
+
+        # IPA 6-(i) CSRF対策
+        - ipa-csrf-no-token-in-form
+        - ipa-csrf-fetch-no-token
+
+        # その他
+        - ipa-hardcoded-secrets
+        - ipa-sensitive-data-in-localstorage
+        - ipa-console-log-sensitive-data
+        - ipa-open-redirect
+        - ipa-postmessage-no-origin-check
+        - ipa-react-refs-security
+        - ipa-next-link-unsafe-href
+
+  # GitHub Actions設定
+  github_actions:
+    enabled: true
+    # PRトリガー対象ブランチ
+    trigger_branches:
+      - main
+      - develop
+    # 監視対象ファイルパターン
+    watch_patterns:
+      - '**.py'
+      - '**.ts'
+      - '**.tsx'
+      - '**.js'
+      - '**.jsx'
+    # 重大な問題でCIを失敗させる
+    fail_on_critical: true
+
+  # ローカル実行設定
+  local:
+    # 結果出力ディレクトリ
+    results_dir: security-results
+    # カラー出力
+    color_output: true
+    # 詳細表示
+    verbose: false

@@ -1,0 +1,346 @@
+rules:
+  # ========================================
+  # IPA 1-(i) SQLインジェクション対策
+  # ========================================
+  - id: ipa-sql-injection-string-format
+    patterns:
+      - pattern-either:
+          - pattern: $DB.execute(f"...$VAR...")
+          - pattern: $DB.execute("..." + $VAR + "...")
+          - pattern: $DB.execute("..." % $VAR)
+          - pattern: $CURSOR.execute(f"...$VAR...")
+          - pattern: $CURSOR.execute("..." + $VAR + "...")
+          - pattern: $CURSOR.execute("..." % $VAR)
+    message: |
+      [IPA 1-(i)] SQLインジェクションの脆弱性: 文字列連結でSQL文を組み立てています。
+      プレースホルダを使用してください。
+
+      ❌ 危険: cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")
+      ✅ 安全: cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-89"
+      owasp: "A03:2021 - Injection"
+      ipa_section: "1-(i)"
+      references:
+        - https://www.ipa.go.jp/security/vuln/websecurity/
+
+  - id: ipa-sql-injection-raw-query
+    patterns:
+      - pattern-either:
+          - pattern: $MODEL.objects.raw($QUERY)
+          - pattern: $MODEL.objects.extra(where=[$QUERY])
+    message: |
+      [IPA 1-(i)] SQLインジェクションの脆弱性: raw()やextra()使用時はプレースホルダを使用してください。
+
+      ❌ 危険: User.objects.raw(f"SELECT * FROM users WHERE name = '{name}'")
+      ✅ 安全: User.objects.raw("SELECT * FROM users WHERE name = %s", [name])
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-89"
+      ipa_section: "1-(i)"
+
+  # ========================================
+  # IPA 2-(i) OSコマンドインジェクション対策
+  # ========================================
+  - id: ipa-os-command-injection-shell-true
+    patterns:
+      - pattern-either:
+          - pattern: subprocess.run($CMD, shell=True, ...)
+          - pattern: subprocess.call($CMD, shell=True, ...)
+          - pattern: subprocess.Popen($CMD, shell=True, ...)
+          - pattern: os.system($CMD)
+    message: |
+      [IPA 2-(i)] OSコマンドインジェクションの脆弱性: shell=Trueまたはos.system()を使用しています。
+
+      ❌ 危険: subprocess.run(f"cat {filename}", shell=True)
+      ✅ 安全: subprocess.run(["cat", filename], shell=False)
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-78"
+      owasp: "A03:2021 - Injection"
+      ipa_section: "2-(i)"
+      references:
+        - https://www.ipa.go.jp/security/vuln/websecurity/
+
+  - id: ipa-os-command-injection-string-format
+    patterns:
+      - pattern-either:
+          - pattern: subprocess.run(f"...$VAR...", ...)
+          - pattern: subprocess.call(f"...$VAR...", ...)
+          - pattern: subprocess.Popen(f"...$VAR...", ...)
+          - pattern: os.system(f"...$VAR...")
+    message: |
+      [IPA 2-(i)] OSコマンドインジェクションの脆弱性: 文字列フォーマットでコマンドを組み立てています。
+      リスト形式で引数を渡してください。
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-78"
+      ipa_section: "2-(i)"
+
+  # ========================================
+  # IPA 3-(i) ディレクトリトラバーサル対策
+  # ========================================
+  - id: ipa-path-traversal-user-input
+    patterns:
+      - pattern-either:
+          - pattern: open($PATH, ...)
+          - pattern: pathlib.Path($PATH)
+      - pattern-not: open("...", ...)
+      - pattern-not: pathlib.Path("...")
+      - metavariable-pattern:
+          metavariable: $PATH
+          patterns:
+            - pattern-not: |
+                "..."
+    message: |
+      [IPA 3-(i)] ディレクトリトラバーサルの脆弱性の可能性: ユーザー入力をファイルパスに使用しています。
+
+      対策:
+      1. os.path.basename()でファイル名のみを抽出
+      2. 固定ディレクトリと結合
+      3. Path.resolve().relative_to()で検証
+
+      例:
+      safe_path = BASE_DIR / os.path.basename(user_input)
+      safe_path.resolve().relative_to(BASE_DIR.resolve())
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-22"
+      owasp: "A01:2021 - Broken Access Control"
+      ipa_section: "3-(i)"
+
+  - id: ipa-path-traversal-no-validation
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $PATH = $INPUT
+              ...
+              open($PATH, ...)
+          - pattern: |
+              $PATH = $INPUT
+              ...
+              pathlib.Path($PATH)
+      - pattern-not-inside: |
+          ...
+          os.path.basename(...)
+          ...
+      - pattern-not-inside: |
+          ...
+          .relative_to(...)
+          ...
+    message: |
+      [IPA 3-(i)] ディレクトリトラバーサル: パス検証なしでファイルを開いています。
+      os.path.basename()やPath.relative_to()で検証してください。
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-22"
+      ipa_section: "3-(i)"
+
+  # ========================================
+  # IPA 4 セッション管理の不備
+  # ========================================
+  - id: ipa-weak-session-id
+    patterns:
+      - pattern-either:
+          - pattern: random.random()
+          - pattern: random.randint(...)
+          - pattern: uuid.uuid1()
+          - pattern: str(time.time())
+    message: |
+      [IPA 4-(i)] セッションID生成に推測可能な値を使用しています。
+
+      ❌ 危険: session_id = str(random.randint(1, 1000000))
+      ✅ 安全: session_id = secrets.token_urlsafe(32)
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-330"
+      ipa_section: "4-(i)"
+
+  - id: ipa-session-cookie-no-httponly
+    patterns:
+      - pattern: $RESPONSE.set_cookie($KEY, $VALUE, ...)
+      - pattern-not: $RESPONSE.set_cookie($KEY, $VALUE, ..., httponly=True, ...)
+    message: |
+      [IPA 4-(iii)] CookieにHttpOnly属性が設定されていません。
+      XSS攻撃からセッションIDを保護するため、httponly=Trueを設定してください。
+
+      例: response.set_cookie("session_id", value, httponly=True, secure=True, samesite="lax")
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-1004"
+      ipa_section: "4-(iii)"
+
+  - id: ipa-session-cookie-no-secure
+    patterns:
+      - pattern: $RESPONSE.set_cookie($KEY, $VALUE, ...)
+      - pattern-not: $RESPONSE.set_cookie($KEY, $VALUE, ..., secure=True, ...)
+    message: |
+      [IPA 4-(iii)] CookieにSecure属性が設定されていません。
+      HTTPS通信でのみCookieを送信するため、secure=Trueを設定してください。
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-614"
+      ipa_section: "4-(iii)"
+
+  # ========================================
+  # IPA 5 XSS対策
+  # ========================================
+  - id: ipa-xss-dangerous-url-schemes
+    patterns:
+      - pattern-either:
+          - pattern: |
+              "javascript:..."
+          - pattern: |
+              "data:..."
+          - pattern: |
+              "vbscript:..."
+    message: |
+      [IPA 5-(ii)] 危険なURLスキーム（javascript:, data:, vbscript:）を使用しています。
+      XSS攻撃に利用される可能性があります。
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+      ipa_section: "5-(ii)"
+
+  - id: ipa-xss-eval-usage
+    patterns:
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: exec(...)
+          - pattern: compile($CODE, ...)
+    message: |
+      [IPA 5-(iii)] eval/exec使用によるコード実行の危険性があります。
+      ユーザー入力を含む場合、XSSやコードインジェクションの脆弱性になります。
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-95"
+      ipa_section: "5-(iii)"
+
+  # ========================================
+  # IPA 7 HTTPヘッダインジェクション
+  # ========================================
+  - id: ipa-header-injection-newline
+    patterns:
+      - pattern-either:
+          - pattern: $RESPONSE.headers[$KEY] = $VALUE
+          - pattern: $RESPONSE.set_cookie($KEY, $VALUE, ...)
+      - metavariable-pattern:
+          metavariable: $VALUE
+          patterns:
+            - pattern-not: |
+                "..."
+    message: |
+      [IPA 7-(i)] HTTPヘッダインジェクションの可能性: ユーザー入力をヘッダーに使用する前に改行コード（\r\n）を除去してください。
+
+      例: safe_value = re.sub(r'[\r\n]', '', user_input)
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-113"
+      ipa_section: "7-(i)"
+
+  # ========================================
+  # IPA 8 メールヘッダインジェクション
+  # ========================================
+  - id: ipa-email-header-injection
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $MSG['To'] = $TO
+          - pattern: |
+              $MSG['Subject'] = $SUBJECT
+          - pattern: |
+              $MSG['From'] = $FROM
+      - pattern-not-inside: |
+          ...
+          re.sub(r'[\r\n]', '', ...)
+          ...
+    message: |
+      [IPA 8-(i)] メールヘッダインジェクションの可能性: ユーザー入力を使用する前に改行コードを除去してください。
+
+      例: safe_to = re.sub(r'[\r\n]', '', user_input)
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-93"
+      ipa_section: "8-(i)"
+
+  # ========================================
+  # 機密情報のハードコード
+  # ========================================
+  - id: ipa-hardcoded-secrets
+    patterns:
+      - pattern-either:
+          - pattern: $VAR = "..."
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: (?i)(password|secret|api_key|token|private_key|secret_key)
+      - pattern-not: $VAR = os.getenv(...)
+      - pattern-not: $VAR = os.environ.get(...)
+    message: |
+      機密情報がハードコードされている可能性があります。
+      環境変数から読み込むようにしてください。
+
+      ❌ 危険: API_KEY = "sk-1234567890"
+      ✅ 安全: API_KEY = os.getenv("API_KEY")
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-798"
+      owasp: "A07:2021 - Identification and Authentication Failures"
+
+  # ========================================
+  # 弱い暗号化アルゴリズム
+  # ========================================
+  - id: ipa-weak-hash-algorithm
+    patterns:
+      - pattern-either:
+          - pattern: hashlib.md5(...)
+          - pattern: hashlib.sha1(...)
+    message: |
+      MD5/SHA1は暗号学的に弱いハッシュアルゴリズムです。
+      SHA256以上を使用してください。
+
+      ✅ 推奨: hashlib.sha256(...)
+    languages: [python]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-327"
+      owasp: "A02:2021 - Cryptographic Failures"
+
+  - id: ipa-password-without-salt
+    patterns:
+      - pattern-either:
+          - pattern: hashlib.sha256($PASSWORD.encode()).hexdigest()
+          - pattern: hashlib.sha512($PASSWORD.encode()).hexdigest()
+      - pattern-not-inside: |
+          ...
+          bcrypt.hashpw(...)
+          ...
+      - pattern-not-inside: |
+          ...
+          pwd_context.hash(...)
+          ...
+    message: |
+      パスワードをソルトなしでハッシュ化しています。
+      bcryptやpasslibを使用してソルト付きハッシュを生成してください。
+
+      ✅ 推奨: pwd_context = CryptContext(schemes=["bcrypt"])
+              pwd_context.hash(password)
+    languages: [python]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-759"
+      owasp: "A02:2021 - Cryptographic Failures"

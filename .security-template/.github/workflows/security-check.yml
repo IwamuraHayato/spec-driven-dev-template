@@ -1,0 +1,173 @@
+name: Security Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - '**.py'
+      - '**.ts'
+      - '**.tsx'
+      - '**.js'
+      - '**.jsx'
+      - '.bandit'
+      - 'scripts/security/**'
+      - '.github/workflows/security-check.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  python-security:
+    name: Python Security Analysis
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.changed_files, '.py')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install security tools
+        run: |
+          pip install bandit semgrep
+
+      - name: Run Bandit
+        id: bandit
+        continue-on-error: true
+        run: |
+          bandit -r . -c .bandit -f json -o bandit-results.json
+          bandit -r . -c .bandit -f screen > bandit-screen.txt || true
+
+      - name: Run Semgrep (Python)
+        id: semgrep-python
+        continue-on-error: true
+        run: |
+          semgrep --config scripts/security/semgrep-rules/ipa-python.yaml \
+                   --json --output semgrep-python-results.json .
+          semgrep --config scripts/security/semgrep-rules/ipa-python.yaml . \
+                   > semgrep-python-screen.txt || true
+
+      - name: Upload Python security results
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-security-results
+          path: |
+            bandit-results.json
+            bandit-screen.txt
+            semgrep-python-results.json
+            semgrep-python-screen.txt
+          retention-days: 30
+
+  typescript-security:
+    name: TypeScript Security Analysis
+    runs-on: ubuntu-latest
+    if: |
+      contains(github.event.pull_request.changed_files, '.ts') ||
+      contains(github.event.pull_request.changed_files, '.tsx') ||
+      contains(github.event.pull_request.changed_files, '.js') ||
+      contains(github.event.pull_request.changed_files, '.jsx')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Semgrep
+        run: |
+          pip install semgrep
+
+      - name: Run Semgrep (TypeScript)
+        id: semgrep-typescript
+        continue-on-error: true
+        run: |
+          semgrep --config scripts/security/semgrep-rules/ipa-typescript.yaml \
+                   --json --output semgrep-typescript-results.json .
+          semgrep --config scripts/security/semgrep-rules/ipa-typescript.yaml . \
+                   > semgrep-typescript-screen.txt || true
+
+      - name: Upload TypeScript security results
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-security-results
+          path: |
+            semgrep-typescript-results.json
+            semgrep-typescript-screen.txt
+          retention-days: 30
+
+  security-report:
+    name: Security Report
+    runs-on: ubuntu-latest
+    needs: [python-security, typescript-security]
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: security-results
+
+      - name: Generate security report
+        id: generate-report
+        run: |
+          python scripts/security/generate-pr-comment.py \
+            --results-dir security-results \
+            --output pr-comment.md
+
+      - name: Post PR comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const comment = fs.readFileSync('pr-comment.md', 'utf8');
+
+            // 既存のコメントを検索
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('🔒 Security Check Results')
+            );
+
+            if (botComment) {
+              // 既存のコメントを更新
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // 新規コメントを作成
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+      - name: Check security status
+        run: |
+          # 重大な問題がある場合はCIを失敗させる
+          CRITICAL_COUNT=$(python scripts/security/check-critical-issues.py \
+                            --results-dir security-results)
+
+          if [ "$CRITICAL_COUNT" -gt 0 ]; then
+            echo "::error::Critical security issues found: $CRITICAL_COUNT"
+            exit 1
+          fi

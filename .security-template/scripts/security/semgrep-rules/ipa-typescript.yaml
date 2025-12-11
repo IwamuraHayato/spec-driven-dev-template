@@ -1,0 +1,386 @@
+rules:
+  # ========================================
+  # IPA 5-(i) XSS対策 - dangerouslySetInnerHTML
+  # ========================================
+  - id: ipa-xss-dangerously-set-inner-html
+    patterns:
+      - pattern-either:
+          - pattern: <$EL dangerouslySetInnerHTML={{...}} />
+          - pattern: <$EL dangerouslySetInnerHTML={{__html: $VAR}} />
+      - pattern-not: |
+          <$EL dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(...)}} />
+    message: |
+      [IPA 5-(i)] XSS脆弱性: dangerouslySetInnerHTMLを使用しています。
+
+      対策:
+      1. 可能な限りdangerouslySetInnerHTMLを使わない
+      2. 必要な場合はDOMPurify.sanitize()でサニタイズ
+
+      ❌ 危険: <div dangerouslySetInnerHTML={{__html: userInput}} />
+      ✅ 安全: <div dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(userInput)}} />
+      ✅ 最良: <div>{userInput}</div>  // Reactが自動エスケープ
+    languages: [tsx, jsx, typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+      owasp: "A03:2021 - Injection"
+      ipa_section: "5-(i)"
+      references:
+        - https://www.ipa.go.jp/security/vuln/websecurity/
+
+  - id: ipa-xss-inner-html-assignment
+    patterns:
+      - pattern-either:
+          - pattern: $EL.innerHTML = $VAR
+          - pattern: $EL.outerHTML = $VAR
+      - pattern-not: $EL.innerHTML = "..."
+      - pattern-not: $EL.outerHTML = "..."
+    message: |
+      [IPA 5-(i)] XSS脆弱性: innerHTML/outerHTMLへの直接代入はXSS攻撃のリスクがあります。
+
+      ❌ 危険: element.innerHTML = userInput
+      ✅ 安全: element.textContent = userInput  // テキストとして設定
+      ✅ 安全: element.innerHTML = DOMPurify.sanitize(userInput)  // サニタイズ後
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+      ipa_section: "5-(i)"
+
+  # ========================================
+  # IPA 5-(ii) URLスキーム検証
+  # ========================================
+  - id: ipa-xss-dangerous-url-scheme
+    patterns:
+      - pattern-either:
+          - pattern: <a href={$VAR} ...>...</a>
+          - pattern: <link href={$VAR} ... />
+          - pattern: window.location.href = $VAR
+          - pattern: window.location = $VAR
+      - pattern-not: <a href="https://..." ...>...</a>
+      - pattern-not: <a href="http://..." ...>...</a>
+      - pattern-not: <a href="/..." ...>...</a>
+    message: |
+      [IPA 5-(ii)] XSS脆弱性: URLスキームの検証が必要です。
+      javascript:, data:, vbscript: などの危険なスキームを拒否してください。
+
+      対策例:
+      const validateUrl = (url: string): boolean => {
+        try {
+          const parsed = new URL(url);
+          return ['http:', 'https:'].includes(parsed.protocol);
+        } catch {
+          return false;
+        }
+      };
+    languages: [tsx, jsx, typescript, javascript]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-79"
+      ipa_section: "5-(ii)"
+
+  - id: ipa-xss-javascript-protocol
+    patterns:
+      - pattern-either:
+          - pattern: |
+              "javascript:..."
+          - pattern: |
+              'javascript:...'
+          - pattern: |
+              `javascript:...`
+    message: |
+      [IPA 5-(ii)] XSS脆弱性: javascript:プロトコルの使用は危険です。
+      XSS攻撃に利用される可能性があります。
+    languages: [tsx, jsx, typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+      ipa_section: "5-(ii)"
+
+  # ========================================
+  # IPA 5-(iii) スクリプトの動的生成
+  # ========================================
+  - id: ipa-xss-eval-usage
+    patterns:
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: new Function(...)
+          - pattern: setTimeout($STR, ...)
+          - pattern: setInterval($STR, ...)
+      - metavariable-pattern:
+          metavariable: $STR
+          patterns:
+            - pattern-not: |
+                "..."
+            - pattern-not: |
+                '...'
+    message: |
+      [IPA 5-(iii)] XSS脆弱性: eval()やFunction()による動的コード実行は危険です。
+
+      ❌ 危険: eval(userInput)
+      ❌ 危険: new Function(userInput)()
+      ❌ 危険: setTimeout(userInput, 1000)
+
+      対策: 動的コード実行を避け、安全な代替手段を使用してください。
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-95"
+      owasp: "A03:2021 - Injection"
+      ipa_section: "5-(iii)"
+
+  # ========================================
+  # CSRF対策
+  # ========================================
+  - id: ipa-csrf-no-token-in-form
+    patterns:
+      - pattern: |
+          <form method="POST" ...>
+            ...
+          </form>
+      - pattern-not: |
+          <form method="POST" ...>
+            ...
+            <input ... name="csrf_token" ... />
+            ...
+          </form>
+      - pattern-not: |
+          <form method="POST" ...>
+            ...
+            <input ... name="_csrf" ... />
+            ...
+          </form>
+    message: |
+      [IPA 6-(i)] CSRF対策: POSTフォームにCSRFトークンが含まれていません。
+
+      対策:
+      1. CSRFトークンを隠しフィールドとして追加
+      2. サーバー側でトークンを検証
+
+      例:
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value={csrfToken} />
+        ...
+      </form>
+    languages: [tsx, jsx]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-352"
+      owasp: "A01:2021 - Broken Access Control"
+      ipa_section: "6-(i)"
+
+  - id: ipa-csrf-fetch-no-token
+    patterns:
+      - pattern-either:
+          - pattern: |
+              fetch($URL, {
+                method: 'POST',
+                ...
+              })
+          - pattern: |
+              fetch($URL, {
+                method: 'PUT',
+                ...
+              })
+          - pattern: |
+              fetch($URL, {
+                method: 'DELETE',
+                ...
+              })
+      - pattern-not: |
+          fetch($URL, {
+            ...,
+            headers: {
+              ...,
+              'X-CSRF-Token': ...,
+              ...
+            },
+            ...
+          })
+    message: |
+      [IPA 6-(i)] CSRF対策: 状態を変更するリクエストにCSRFトークンを含めてください。
+
+      例:
+      fetch('/api/data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+        },
+        body: JSON.stringify(data),
+      })
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-352"
+      ipa_section: "6-(i)"
+
+  # ========================================
+  # 機密情報のハードコード
+  # ========================================
+  - id: ipa-hardcoded-secrets
+    patterns:
+      - pattern-either:
+          - pattern: const $VAR = "..."
+          - pattern: let $VAR = "..."
+          - pattern: var $VAR = "..."
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: (?i)(api_?key|secret|password|token|private_?key|access_?token)
+      - pattern-not: const $VAR = process.env.$ENV
+      - pattern-not: const $VAR = import.meta.env.$ENV
+    message: |
+      機密情報がハードコードされている可能性があります。
+      環境変数から読み込むようにしてください。
+
+      ❌ 危険: const API_KEY = "sk-1234567890"
+      ✅ 安全: const API_KEY = process.env.NEXT_PUBLIC_API_KEY
+      ✅ 安全: const API_KEY = import.meta.env.VITE_API_KEY
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-798"
+      owasp: "A07:2021 - Identification and Authentication Failures"
+
+  # ========================================
+  # ローカルストレージへの機密情報保存
+  # ========================================
+  - id: ipa-sensitive-data-in-localstorage
+    patterns:
+      - pattern-either:
+          - pattern: localStorage.setItem($KEY, ...)
+          - pattern: sessionStorage.setItem($KEY, ...)
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: (?i)(password|token|secret|private_?key|credit_?card|ssn)
+    message: |
+      機密情報をlocalStorage/sessionStorageに保存しています。
+      これらはJavaScriptからアクセス可能で、XSS攻撃で盗まれる可能性があります。
+
+      対策:
+      1. トークンはHttpOnly Cookieに保存
+      2. 機密情報はサーバー側のセッションで管理
+      3. ブラウザに保存する必要がある場合は暗号化を検討
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-922"
+      owasp: "A04:2021 - Insecure Design"
+
+  # ========================================
+  # console.logによる情報漏洩
+  # ========================================
+  - id: ipa-console-log-sensitive-data
+    patterns:
+      - pattern-either:
+          - pattern: console.log(..., $VAR, ...)
+          - pattern: console.error(..., $VAR, ...)
+          - pattern: console.warn(..., $VAR, ...)
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: (?i)(password|token|secret|api_?key|private_?key)
+    message: |
+      機密情報をconsole.logに出力している可能性があります。
+      本番環境では情報漏洩のリスクがあります。
+
+      対策:
+      1. 本番ビルドでconsole.logを削除
+      2. 機密情報のログ出力を避ける
+      3. 環境変数で本番/開発を分ける
+    languages: [typescript, javascript]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-532"
+      owasp: "A09:2021 - Security Logging and Monitoring Failures"
+
+  # ========================================
+  # オープンリダイレクト
+  # ========================================
+  - id: ipa-open-redirect
+    patterns:
+      - pattern-either:
+          - pattern: window.location.href = $URL
+          - pattern: window.location = $URL
+          - pattern: router.push($URL)
+          - pattern: router.replace($URL)
+          - pattern: navigate($URL)
+      - pattern-not: window.location.href = "/..."
+      - pattern-not: window.location = "/..."
+      - pattern-not: router.push("/...")
+      - pattern-not: navigate("/...")
+    message: |
+      オープンリダイレクトの脆弱性: ユーザー入力を使ったリダイレクトは検証が必要です。
+
+      対策:
+      1. リダイレクト先を許可リストで検証
+      2. 相対URLのみ許可
+      3. 外部URLへのリダイレクトは警告を表示
+
+      例:
+      const isValidRedirect = (url: string): boolean => {
+        return url.startsWith('/') && !url.startsWith('//');
+      };
+    languages: [tsx, jsx, typescript, javascript]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-601"
+      owasp: "A01:2021 - Broken Access Control"
+
+  # ========================================
+  # postMessage セキュリティ
+  # ========================================
+  - id: ipa-postmessage-no-origin-check
+    patterns:
+      - pattern: |
+          window.addEventListener('message', ($EVENT) => {
+            ...
+          })
+      - pattern-not: |
+          window.addEventListener('message', ($EVENT) => {
+            if ($EVENT.origin !== ...) { ... }
+            ...
+          })
+    message: |
+      postMessageのoriginチェックが不足しています。
+      任意のオリジンからのメッセージを受信すると、XSSやデータ漏洩のリスクがあります。
+
+      ✅ 安全な実装:
+      window.addEventListener('message', (event) => {
+        if (event.origin !== 'https://trusted-domain.com') {
+          return;
+        }
+        // メッセージ処理...
+      });
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-346"
+      owasp: "A04:2021 - Insecure Design"
+
+  # ========================================
+  # React特有の問題
+  # ========================================
+  - id: ipa-react-refs-security
+    patterns:
+      - pattern: |
+          $REF.current.innerHTML = $VAR
+    message: |
+      React refを使ったinnerHTMLの直接操作はXSSのリスクがあります。
+      Reactの仮想DOMを使うか、DOMPurifyでサニタイズしてください。
+    languages: [tsx, typescript]
+    severity: ERROR
+    metadata:
+      cwe: "CWE-79"
+
+  - id: ipa-next-link-unsafe-href
+    patterns:
+      - pattern: <Link href={$HREF} ...>...</Link>
+      - pattern-not: <Link href="/..." ...>...</Link>
+      - pattern-not: <Link href="https://..." ...>...</Link>
+    message: |
+      Next.js Linkコンポーネントで動的なhrefを使用しています。
+      URLスキームの検証を行ってください。
+    languages: [tsx, jsx]
+    severity: WARNING
+    metadata:
+      cwe: "CWE-79"

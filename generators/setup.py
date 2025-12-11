@@ -16,6 +16,7 @@ from typing import Optional
 from config_loader import ConfigLoader
 from template_processor import TemplateProcessor
 from validators import ConfigValidator
+from security_integrator import SecurityIntegrator
 
 
 class ProjectGenerator:
@@ -144,6 +145,14 @@ class ProjectGenerator:
             print("\nThese variables may need manual replacement")
         else:
             print(f"✓ All variables replaced successfully")
+
+        # Integrate security template
+        security_integrator = SecurityIntegrator(
+            self.repo_root,
+            self.template_name,
+            output_path
+        )
+        security_integrator.integrate()
 
         # Success message
         print(f"\n{'=' * 60}")

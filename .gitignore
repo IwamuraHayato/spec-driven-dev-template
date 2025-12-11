@@ -30,3 +30,13 @@ ENV/
 
 # Generated files
 generators/*.pyc
+
+# Security check results
+security-results/
+bandit-results.json
+bandit-screen.txt
+semgrep-python-results.json
+semgrep-python-screen.txt
+semgrep-typescript-results.json
+semgrep-typescript-screen.txt
+pr-comment.md

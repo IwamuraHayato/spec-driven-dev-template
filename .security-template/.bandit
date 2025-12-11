@@ -1,0 +1,68 @@
+# Bandit設定ファイル
+# IPA「安全なウェブサイトの作り方」準拠のセキュリティチェック
+
+[bandit]
+# 除外するディレクトリ
+exclude_dirs = [
+    '/tests',
+    '/test',
+    '/.venv',
+    '/venv',
+    '/node_modules',
+    '/.git'
+]
+
+# テストファイル
+tests = [
+    'B201',  # flask_debug_true
+    'B301',  # pickle (deserialization)
+    'B302',  # marshal (deserialization)
+    'B303',  # md5/sha1 (weak crypto)
+    'B304',  # insecure cipher modes
+    'B305',  # insecure cipher
+    'B306',  # mktemp_q (insecure temp file)
+    'B307',  # eval (code injection)
+    'B308',  # mark_safe (XSS)
+    'B310',  # urllib_urlopen (SSRF)
+    'B311',  # random (weak random)
+    'B312',  # telnetlib (insecure protocol)
+    'B313',  # xml (XML injection)
+    'B314',  # xml (XML bomb)
+    'B315',  # xml (XML external entities)
+    'B316',  # xml (XML external entities)
+    'B317',  # xml (XML external entities)
+    'B318',  # xml (XML external entities)
+    'B319',  # xml (XML external entities)
+    'B320',  # xml (XML external entities)
+    'B321',  # ftplib (insecure protocol)
+    'B323',  # unverified_context (SSL/TLS)
+    'B324',  # hashlib (weak hash)
+    'B501',  # request_with_no_cert_validation
+    'B502',  # ssl_with_bad_version
+    'B503',  # ssl_with_bad_defaults
+    'B504',  # ssl_with_no_version
+    'B505',  # weak_cryptographic_key
+    'B506',  # yaml_load (code execution)
+    'B507',  # ssh_no_host_key_verification
+    'B601',  # paramiko_calls (command injection)
+    'B602',  # subprocess_popen_with_shell_equals_true (IPA 2-(i) OSコマンドインジェクション)
+    'B603',  # subprocess_without_shell_equals_true
+    'B604',  # any_other_function_with_shell_equals_true
+    'B605',  # start_process_with_a_shell
+    'B606',  # start_process_with_no_shell
+    'B607',  # start_process_with_partial_path
+    'B608',  # hardcoded_sql_expressions (IPA 1-(i) SQLインジェクション)
+    'B609',  # linux_commands_wildcard_injection
+    'B610',  # django_extra_used
+    'B611',  # django_rawsql_used
+    'B701',  # jinja2_autoescape_false (XSS)
+    'B702',  # use_of_mako_templates (XSS)
+    'B703'   # django_mark_safe (XSS)
+]
+
+# 重大度レベル（LOW, MEDIUM, HIGH）
+# IPA対応: MEDIUM以上を検出
+severity = MEDIUM
+
+# 信頼度レベル（LOW, MEDIUM, HIGH）
+confidence = MEDIUM
