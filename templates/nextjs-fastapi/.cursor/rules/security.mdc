@@ -1,143 +1,765 @@
 ---
-description: Security guidelines and best practices
+description: Security guidelines and best practices based on IPA guidelines
 globs:
 alwaysApply: true
 ---
 
-# セキュリティ規約
+# セキュリティ規約（IPA「安全なウェブサイトの作り方」準拠）
 
-## 認証・認可
+本規約は IPA（独立行政法人 情報処理推進機構）「安全なウェブサイトの作り方 第7版」に準拠しています。
 
-- JWT トークンベースの認証を使用
-- トークンは httpOnly Cookie または Authorization ヘッダーで送信
-- リフレッシュトークンの実装
-- RBAC（Role-Based Access Control）による認可
+---
 
-## 環境変数管理
+## 1. SQLインジェクション対策 (CWE-89)
 
-機密情報は必ず環境変数で管理する。
+### 根本的解決策
 
-```python
-import os
-
-# 良い例: 環境変数から取得
-API_KEY = os.getenv("API_KEY")
-DATABASE_PASSWORD = os.getenv("DB_PASSWORD")
-
-# デフォルト値の設定（機密情報以外）
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///default.db")
-
-# 必須の環境変数チェック
-if not API_KEY:
-    raise ValueError("API_KEY が設定されていません")
-```
-
-- `.env` ファイルは `.gitignore` に追加
-- `.env.example` ファイルでテンプレートを提供
-
-## データベースセキュリティ
-
-### SQL インジェクション対策
+**プレースホルダを使用したSQL文の組み立て**
 
 ```python
-# 危険: 文字列連結でSQL作成
+# ❌ 危険: 文字列連結でSQL作成
 def get_user_unsafe(email: str):
-    query = f"SELECT * FROM users WHERE email = '{email}'"  # 危険!
+    query = f"SELECT * FROM users WHERE email = '{email}'"  # SQLインジェクション脆弱性!
     return db.execute(query)
 
-# 良い例: プレースホルダーを使用
+# ✅ 良い例: プレースホルダーを使用
 def get_user_safe(email: str):
     query = "SELECT * FROM users WHERE email = :email"
     return db.execute(query, {"email": email})
 
-# 良い例: SQLAlchemy ORM を使用
+# ✅ 良い例: SQLAlchemy ORM を使用（推奨）
 def get_user_orm(email: str):
     return db.query(User).filter(User.email == email).first()
+
+# ✅ 良い例: SQLAlchemy Core を使用
+from sqlalchemy import select, text
+stmt = select(users_table).where(users_table.c.email == email)
+result = connection.execute(stmt)
 ```
 
-### パスワードのハッシュ化
+### 保険的対策
+
+```python
+# エラーメッセージで内部情報を漏らさない
+from fastapi import HTTPException
+
+def get_user(user_id: int):
+    try:
+        return db.query(User).filter(User.id == user_id).first()
+    except Exception:
+        # ❌ 危険: 詳細なエラーメッセージ
+        # raise HTTPException(status_code=500, detail=str(e))
+
+        # ✅ 良い例: 一般的なエラーメッセージ
+        raise HTTPException(status_code=500, detail="データベースエラーが発生しました")
+```
+
+- データベースアカウントの権限を最小化
+- ウェブアプリケーション用のDBユーザーには必要最小限の権限のみ付与
+
+---
+
+## 2. OSコマンド・インジェクション対策 (CWE-78)
+
+### 根本的解決策
+
+**シェルを起動できる言語機能の利用を避ける**
+
+```python
+import subprocess
+import shlex
+
+# ❌ 危険: shell=True でユーザー入力を使用
+def execute_unsafe(filename: str):
+    subprocess.run(f"cat {filename}", shell=True)  # OSコマンドインジェクション脆弱性!
+
+# ✅ 良い例: shell=False でリスト形式で引数を渡す
+def execute_safe(filename: str):
+    subprocess.run(["cat", filename], shell=False)
+
+# ✅ 良い例: ライブラリを直接使用（推奨）
+def read_file_safe(filename: str):
+    with open(filename, 'r') as f:
+        return f.read()
+```
+
+### 保険的対策
+
+```python
+import os
+import re
+
+# 許可するファイル名パターンを限定
+ALLOWED_FILENAME_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+\.txt$')
+
+def validate_filename(filename: str) -> bool:
+    """ファイル名のバリデーション"""
+    if not ALLOWED_FILENAME_PATTERN.match(filename):
+        return False
+    # パストラバーサル対策
+    if '..' in filename or '/' in filename:
+        return False
+    return True
+```
+
+---
+
+## 3. ディレクトリ・トラバーサル対策 (CWE-22)
+
+### 根本的解決策
+
+```python
+import os
+from pathlib import Path
+
+# 許可されたベースディレクトリ
+BASE_DIR = Path("/app/uploads")
+
+def get_file_safe(filename: str) -> Path:
+    """安全なファイルパス取得"""
+    # ファイル名のみを抽出（パスを含めない）
+    safe_filename = os.path.basename(filename)
+
+    # 固定ディレクトリと結合
+    file_path = BASE_DIR / safe_filename
+
+    # パスが許可されたディレクトリ内にあることを確認
+    try:
+        file_path.resolve().relative_to(BASE_DIR.resolve())
+    except ValueError:
+        raise ValueError("不正なファイルパスです")
+
+    return file_path
+
+# ❌ 危険: ユーザー入力をそのまま使用
+def get_file_unsafe(filepath: str):
+    return open(filepath, 'r')  # ../../../etc/passwd などにアクセス可能!
+```
+
+### 保険的対策
+
+```python
+# ファイルへのアクセス権限設定
+import stat
+
+def set_secure_permissions(filepath: str):
+    """ファイルに安全なパーミッションを設定"""
+    os.chmod(filepath, stat.S_IRUSR | stat.S_IWUSR)  # 所有者のみ読み書き可能
+```
+
+---
+
+## 4. セッション管理の不備対策 (CWE-384)
+
+### 根本的解決策
+
+```python
+import secrets
+from datetime import datetime, timedelta
+from fastapi import Response, Cookie
+from typing import Optional
+
+# セッションID生成（推測困難な値）
+def generate_session_id() -> str:
+    """暗号学的に安全なセッションID生成"""
+    return secrets.token_urlsafe(32)  # 256ビットのランダム値
+
+# セッションCookieの設定
+def set_session_cookie(response: Response, session_id: str):
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        httponly=True,      # JavaScriptからアクセス不可
+        secure=True,        # HTTPSのみ
+        samesite="lax",     # CSRF対策
+        max_age=3600,       # 有効期限: 1時間
+        path="/"
+    )
+
+# セッション固定化攻撃対策
+def regenerate_session_on_login(response: Response, old_session_id: str):
+    """ログイン成功時にセッションIDを再生成"""
+    # 古いセッションを無効化
+    invalidate_session(old_session_id)
+
+    # 新しいセッションIDを生成
+    new_session_id = generate_session_id()
+    set_session_cookie(response, new_session_id)
+    return new_session_id
+```
+
+### JWT トークン管理
+
+```python
+from datetime import datetime, timedelta
+from jose import jwt, JWTError
+
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+def create_access_token(data: dict) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire, "type": "access"})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def create_refresh_token(data: dict) -> str:
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode.update({"exp": expire, "type": "refresh"})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+```
+
+---
+
+## 5. クロスサイト・スクリプティング（XSS）対策 (CWE-79)
+
+### 根本的解決策
+
+**Next.js / React でのHTMLエスケープ**
+
+```typescript
+// ✅ React はデフォルトでエスケープを行う
+function SafeComponent({ userInput }: { userInput: string }) {
+  return <div>{userInput}</div>;  // 自動的にエスケープされる
+}
+
+// ❌ 危険: dangerouslySetInnerHTML の使用
+function UnsafeComponent({ htmlContent }: { htmlContent: string }) {
+  return <div dangerouslySetInnerHTML={{ __html: htmlContent }} />;  // XSS脆弱性!
+}
+
+// ✅ HTMLを表示する必要がある場合はサニタイズ
+import DOMPurify from 'dompurify';
+
+function SafeHtmlComponent({ htmlContent }: { htmlContent: string }) {
+  const sanitizedHtml = DOMPurify.sanitize(htmlContent);
+  return <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
+}
+```
+
+**Python バックエンドでのエスケープ**
+
+```python
+import html
+
+def escape_html(text: str) -> str:
+    """HTMLエスケープ処理"""
+    return html.escape(text)
+
+# URL検証
+from urllib.parse import urlparse
+
+def validate_url(url: str) -> bool:
+    """URLスキームの検証"""
+    try:
+        result = urlparse(url)
+        # javascript: スキームを拒否
+        if result.scheme.lower() in ['javascript', 'vbscript', 'data']:
+            return False
+        return result.scheme in ['http', 'https']
+    except Exception:
+        return False
+```
+
+### 保険的対策
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Content-Type の適切な設定
+@app.get("/api/data")
+def get_data():
+    return {"data": "value"}  # FastAPI はデフォルトで application/json を設定
+
+# HTTPOnly Cookie の設定（セッション管理の項を参照）
+```
+
+```typescript
+// Next.js での CSP 設定 (next.config.js)
+const securityHeaders = [
+  {
+    key: 'Content-Security-Policy',
+    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+  },
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff'
+  },
+  {
+    key: 'X-Frame-Options',
+    value: 'DENY'
+  },
+  {
+    key: 'X-XSS-Protection',
+    value: '1; mode=block'
+  }
+];
+```
+
+---
+
+## 6. CSRF（クロスサイト・リクエスト・フォージェリ）対策 (CWE-352)
+
+### 根本的解決策
+
+```python
+import secrets
+from fastapi import Request, HTTPException, Depends
+
+# CSRFトークン生成
+def generate_csrf_token() -> str:
+    return secrets.token_urlsafe(32)
+
+# CSRFトークン検証ミドルウェア
+async def verify_csrf_token(request: Request):
+    if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
+        # ヘッダーからトークン取得
+        csrf_token = request.headers.get("X-CSRF-Token")
+        # セッションからトークン取得
+        session_token = request.session.get("csrf_token")
+
+        if not csrf_token or csrf_token != session_token:
+            raise HTTPException(status_code=403, detail="CSRF token mismatch")
+
+# 重要な処理での再認証
+@app.post("/api/transfer")
+async def transfer_money(
+    request: TransferRequest,
+    current_user: User = Depends(get_current_user),
+    password: str = Body(...)
+):
+    # パスワード再確認
+    if not verify_password(password, current_user.hashed_password):
+        raise HTTPException(status_code=401, detail="パスワードが正しくありません")
+
+    # 送金処理...
+```
+
+```typescript
+// Next.js フロントエンドでのCSRFトークン送信
+async function submitForm(data: FormData) {
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+  const response = await fetch('/api/submit', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': csrfToken || '',
+    },
+    body: JSON.stringify(data),
+  });
+}
+```
+
+### 保険的対策
+
+```python
+# Referer ヘッダーの検証
+def verify_referer(request: Request, allowed_origins: list[str]):
+    referer = request.headers.get("referer", "")
+    origin = request.headers.get("origin", "")
+
+    check_value = origin or referer
+    if not any(check_value.startswith(allowed) for allowed in allowed_origins):
+        raise HTTPException(status_code=403, detail="Invalid origin")
+```
+
+---
+
+## 7. HTTPヘッダ・インジェクション対策 (CWE-113)
+
+### 根本的解決策
+
+```python
+import re
+from fastapi import HTTPException
+
+def sanitize_header_value(value: str) -> str:
+    """ヘッダー値から改行コードを除去"""
+    # 改行コード（CR, LF）を除去
+    return re.sub(r'[\r\n]', '', value)
+
+def set_redirect_header(response: Response, redirect_url: str):
+    """安全なリダイレクト設定"""
+    # 改行コードを含む場合は拒否
+    if '\r' in redirect_url or '\n' in redirect_url:
+        raise HTTPException(status_code=400, detail="不正なURLです")
+
+    # ヘッダーインジェクション対策済みのAPIを使用
+    response.headers["Location"] = redirect_url
+    response.status_code = 302
+
+# FastAPIの RedirectResponse を使用（推奨）
+from fastapi.responses import RedirectResponse
+
+@app.get("/redirect")
+def redirect_to_page(url: str):
+    # URLの検証
+    if not validate_url(url):
+        raise HTTPException(status_code=400, detail="不正なURLです")
+    return RedirectResponse(url=url)
+```
+
+---
+
+## 8. メールヘッダ・インジェクション対策 (CWE-93)
+
+### 根本的解決策
+
+```python
+import re
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+def sanitize_email_header(value: str) -> str:
+    """メールヘッダーから改行コードを除去"""
+    return re.sub(r'[\r\n]', '', value)
+
+def send_email_safe(to_address: str, subject: str, body: str):
+    """安全なメール送信"""
+    # ヘッダーに使用する値から改行を除去
+    safe_to = sanitize_email_header(to_address)
+    safe_subject = sanitize_email_header(subject)
+
+    # メールアドレスの形式を検証
+    email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+    if not email_pattern.match(safe_to):
+        raise ValueError("無効なメールアドレスです")
+
+    # MIMEライブラリを使用（ヘッダーインジェクション対策済み）
+    msg = MIMEText(body, 'plain', 'utf-8')
+    msg['To'] = safe_to
+    msg['Subject'] = safe_subject
+
+    # 送信処理...
+
+# ❌ 危険: ユーザー入力をそのままヘッダーに使用
+def send_email_unsafe(to: str, subject: str, body: str):
+    headers = f"To: {to}\nSubject: {subject}\n\n"  # インジェクション脆弱性!
+```
+
+---
+
+## 9. クリックジャッキング対策 (CWE-1021)
+
+### 根本的解決策
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+
+app = FastAPI()
+
+# X-Frame-Options ヘッダーの設定
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    response = await call_next(request)
+
+    # フレーム内での表示を禁止
+    response.headers["X-Frame-Options"] = "DENY"
+    # または特定のオリジンのみ許可
+    # response.headers["X-Frame-Options"] = "SAMEORIGIN"
+
+    # Content-Security-Policy でも制御可能
+    response.headers["Content-Security-Policy"] = "frame-ancestors 'none';"
+
+    return response
+```
+
+```typescript
+// Next.js での設定 (next.config.js)
+module.exports = {
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'none';",
+          },
+        ],
+      },
+    ];
+  },
+};
+```
+
+### 保険的対策
+
+```typescript
+// 重要な処理の前に再認証を要求
+async function performCriticalAction() {
+  const confirmed = await showPasswordConfirmDialog();
+  if (!confirmed) {
+    return;
+  }
+  // 処理を実行...
+}
+```
+
+---
+
+## 10. バッファオーバーフロー対策 (CWE-120)
+
+### 根本的解決策
+
+```python
+# Python/TypeScript は自動メモリ管理のため、直接的なバッファオーバーフローは発生しにくい
+# ただし、以下の点に注意
+
+# 1. 依存ライブラリの更新
+# requirements.txt や package.json の定期的な更新
+
+# 2. 入力サイズの制限
+from fastapi import FastAPI, File, UploadFile, HTTPException
+
+app = FastAPI()
+
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    # ファイルサイズの確認
+    contents = await file.read()
+    if len(contents) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail="ファイルサイズが大きすぎます")
+
+    # 処理...
+```
+
+```python
+# 依存関係の脆弱性チェック
+# pip install pip-audit
+# pip-audit
+
+# npm audit  (Node.js)
+```
+
+---
+
+## 11. アクセス制御・認可の不備対策 (CWE-284)
+
+### 根本的解決策
+
+```python
+from fastapi import Depends, HTTPException, status
+from enum import Enum
+
+class Role(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+    GUEST = "guest"
+
+# 認証の実装
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+    """JWTトークンからユーザーを取得"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="認証情報が無効です")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="認証情報が無効です")
+
+    user = get_user_by_id(user_id)
+    if user is None:
+        raise HTTPException(status_code=401, detail="ユーザーが見つかりません")
+    return user
+
+# 認可（RBAC）の実装
+def require_role(allowed_roles: list[Role]):
+    """ロールベースのアクセス制御"""
+    async def role_checker(current_user: User = Depends(get_current_user)):
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="この操作を行う権限がありません"
+            )
+        return current_user
+    return role_checker
+
+# 使用例
+@app.delete("/api/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    current_user: User = Depends(require_role([Role.ADMIN]))
+):
+    """管理者のみがユーザーを削除可能"""
+    # 削除処理...
+
+# リソースレベルの認可
+@app.get("/api/documents/{doc_id}")
+async def get_document(
+    doc_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    document = get_document_by_id(doc_id)
+
+    # リソースの所有者または管理者のみアクセス可能
+    if document.owner_id != current_user.id and current_user.role != Role.ADMIN:
+        raise HTTPException(status_code=403, detail="このドキュメントへのアクセス権がありません")
+
+    return document
+```
+
+---
+
+## 12. パスワード管理
+
+### 安全なパスワード保存
 
 ```python
 from passlib.context import CryptContext
 
+# bcrypt を使用（自動的にソルト付きハッシュを生成）
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
-    """パスワードをハッシュ化"""
+    """パスワードをハッシュ化（ソルト自動生成）"""
     return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """パスワードを検証"""
     return pwd_context.verify(plain_password, hashed_password)
-```
 
-## API セキュリティ
-
-- CORS 設定の適切な構成
-- レート制限の実装
-- 入力バリデーション（Pydantic スキーマ）
-- エラーメッセージで機密情報を漏らさない
-
-### 入力バリデーション
-
-```python
+# パスワードポリシーの実装
 import re
 from pydantic import BaseModel, field_validator
 
-class UserCreate(BaseModel):
-    email: str
+class PasswordPolicy(BaseModel):
     password: str
-
-    @field_validator("email")
-    @classmethod
-    def validate_email(cls, v: str) -> str:
-        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if not re.match(pattern, v):
-            raise ValueError("無効なメールアドレス形式です")
-        return v
 
     @field_validator("password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("パスワードは8文字以上必要です")
+        if len(v) < 12:
+            raise ValueError("パスワードは12文字以上必要です")
+        if not re.search(r'[A-Z]', v):
+            raise ValueError("大文字を含める必要があります")
+        if not re.search(r'[a-z]', v):
+            raise ValueError("小文字を含める必要があります")
+        if not re.search(r'\d', v):
+            raise ValueError("数字を含める必要があります")
+        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', v):
+            raise ValueError("特殊文字を含める必要があります")
         return v
 ```
 
-## フロントエンドセキュリティ
+---
 
-- XSS 対策: React のデフォルト エスケープを活用
-- CSRF 対策: トークンベース認証
-- 機密情報をクライアントサイドに保存しない
-- Content Security Policy (CSP) の設定
+## 13. 環境変数・機密情報管理
 
-## 依存関係管理
+```python
+import os
+from functools import lru_cache
+from pydantic_settings import BaseSettings
 
-- 定期的な依存関係の更新
-- 脆弱性スキャンツールの使用（npm audit, pip-audit）
-- セキュリティアラートへの迅速な対応
+class Settings(BaseSettings):
+    """環境変数から設定を読み込む"""
+    database_url: str
+    jwt_secret_key: str
+    api_key: str
 
-## ログとモニタリング
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+
+# 使用例
+settings = get_settings()
+```
+
+- `.env` ファイルは `.gitignore` に追加
+- `.env.example` ファイルでテンプレートを提供
+- 本番環境では環境変数または Secret Manager を使用
+
+---
+
+## 14. 通信の暗号化（HTTPS）
+
+- 本番環境では必ず HTTPS を使用
+- HSTS（HTTP Strict Transport Security）の設定
+
+```python
+# HSTS ヘッダーの設定
+@app.middleware("http")
+async def add_hsts_header(request, call_next):
+    response = await call_next(request)
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+```
+
+---
+
+## 15. ログとモニタリング
 
 ```python
 import logging
+from datetime import datetime
 
+# ログ設定
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
+logger = logging.getLogger(__name__)
 
+def log_security_event(event_type: str, user_id: str, details: str):
+    """セキュリティイベントをログに記録"""
+    logger.warning(f"SECURITY_EVENT: {event_type} | User: {user_id} | {details}")
+
+# 使用例
 def process_login(email: str, password: str) -> bool:
     try:
         user = authenticate(email, password)
-        logging.info(f"ログイン成功: {email}")
+        logger.info(f"ログイン成功: user_id={user.id}")
         return True
     except AuthenticationError:
         # パスワードはログに出力しない
-        logging.warning(f"ログイン失敗: {email}")
+        log_security_event("LOGIN_FAILED", email, "認証失敗")
         return False
 ```
 
-- 機密情報（パスワード、トークン）をログに出力しない
-- 認証・認可の失敗をログに記録
-- 異常なアクセスパターンの監視
+### ログに出力してはいけない情報
+- パスワード
+- アクセストークン・APIキー
+- 個人情報（クレジットカード番号など）
+- セッションID
+
+---
+
+## 16. 依存関係のセキュリティ
+
+```bash
+# Python 依存関係の脆弱性チェック
+pip install pip-audit
+pip-audit
+
+# Node.js 依存関係の脆弱性チェック
+npm audit
+npm audit fix
+
+# Dependabot や Snyk の導入を推奨
+```
+
+---
+
+## 参考文献
+
+- [IPA 安全なウェブサイトの作り方 第7版](https://www.ipa.go.jp/security/vuln/websecurity/)
+- [OWASP Top 10](https://owasp.org/www-project-top-ten/)
+- [CWE - Common Weakness Enumeration](https://cwe.mitre.org/)
