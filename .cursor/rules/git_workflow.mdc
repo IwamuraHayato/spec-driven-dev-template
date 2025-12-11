@@ -1,0 +1,314 @@
+---
+description: テンプレートリポジトリのGit運用ルール
+globs:
+alwaysApply: true
+---
+
+# Git ワークフロー
+
+テンプレートリポジトリ開発における Git 運用ルールです。
+
+## 基本原則
+
+1. **ブランチ必須**: main への直接プッシュは原則禁止
+2. **小さなコミット**: 論理的な単位で頻繁にコミット
+3. **明確なメッセージ**: コミットメッセージは具体的に
+4. **レビュー文化**: 重要な変更は必ずレビュー
+
+## セッション開始時の確認
+
+### 毎回実行すべきコマンド
+
+```bash
+# 現在のブランチとステータス確認
+git status
+git branch
+
+# main でないことを確認
+# main の場合は必ずブランチ作成
+if [ "$(git branch --show-current)" = "main" ]; then
+    echo "⚠️  main ブランチです。ブランチを作成してください"
+    git checkout -b feature/your-feature-name
+fi
+```
+
+## ブランチ作成パターン
+
+### 新機能開発
+
+```bash
+# 例: 新しいテンプレート追加
+git checkout main
+git pull origin main
+git checkout -b feature/add-flutter-template
+
+# 作業...
+git add .
+git commit -m "feat: Add Flutter + FastAPI template"
+git push -u origin feature/add-flutter-template
+```
+
+### バグ修正
+
+```bash
+# 例: ジェネレーターのバグ修正
+git checkout main
+git pull origin main
+git checkout -b fix/template-variable-bug
+
+# 修正...
+git add generators/template_processor.py
+git commit -m "fix: Correct variable replacement in nested structures"
+git push -u origin fix/template-variable-bug
+```
+
+### セキュリティ実装
+
+```bash
+# 例: IPA Phase 3 実装
+git checkout main
+git pull origin main
+git checkout -b security/implement-ipa-phase3
+
+# 実装...
+# ローカルでセキュリティチェック実行
+./scripts/security/run-security-check.sh
+
+git add .
+git commit -m "security: Implement IPA Phase 3 AI security review"
+git push -u origin security/implement-ipa-phase3
+```
+
+## コミット戦略
+
+### 段階的コミット（推奨）
+
+```bash
+# 1. セキュリティルールファイル追加
+git add .security-template/scripts/security/semgrep-rules/
+git commit -m "security: Add IPA-compliant Semgrep rules"
+
+# 2. GitHub Actions ワークフロー追加
+git add .security-template/.github/workflows/
+git commit -m "security: Add GitHub Actions security check workflow"
+
+# 3. ドキュメント追加
+git add docs/security/
+git commit -m "docs: Add security implementation guide"
+
+# 4. 統合スクリプト追加
+git add generators/security_integrator.py
+git commit -m "feat: Add security template integrator"
+```
+
+### 一括コミット（小規模変更のみ）
+
+```bash
+# ドキュメント修正のみの場合
+git add docs/
+git commit -m "docs: Fix typos and update examples"
+```
+
+## プッシュとPR作成
+
+### 初回プッシュ
+
+```bash
+# ブランチを追跡設定してプッシュ
+git push -u origin feature/your-feature-name
+```
+
+### 追加プッシュ
+
+```bash
+# 2回目以降
+git push
+```
+
+### PR作成（GitHub CLI使用）
+
+```bash
+# GitHub CLIでPR作成
+gh pr create --title "feat: Add new security features" --body "$(cat <<'EOF'
+## 概要
+IPA Phase 1-2 セキュリティチェック実装
+
+## 変更内容
+- Bandit + Semgrep 静的解析ツール導入
+- GitHub Actions ワークフロー追加
+- PR自動コメント機能実装
+
+## テスト
+- [ ] ローカルでセキュリティチェック実行
+- [ ] GitHub Actions動作確認
+- [ ] 既存テンプレートへの影響確認
+
+## 関連Issue
+Closes #13, #14
+EOF
+)"
+```
+
+## コミットメッセージガイドライン
+
+### フォーマット
+
+```
+<type>: <subject>
+
+<body>
+
+<footer>
+```
+
+### Type一覧
+
+| Type | 説明 | 例 |
+|------|------|-----|
+| `feat` | 新機能追加 | `feat: Add Django template support` |
+| `fix` | バグ修正 | `fix: Correct variable replacement logic` |
+| `docs` | ドキュメント変更 | `docs: Update setup guide` |
+| `security` | セキュリティ関連 | `security: Implement IPA Phase 2` |
+| `refactor` | リファクタリング | `refactor: Simplify generator logic` |
+| `test` | テスト追加・修正 | `test: Add generator unit tests` |
+| `chore` | その他の変更 | `chore: Update dependencies` |
+
+### 良いコミットメッセージの例
+
+```bash
+# ✅ Good: 具体的で明確
+git commit -m "security: Add 30 IPA-compliant Semgrep rules for Python and TypeScript"
+
+# ✅ Good: 影響範囲が明確
+git commit -m "feat: Add automatic security template integration to project generator"
+
+# ✅ Good: 問題と解決策が明確
+git commit -m "fix: Prevent variable replacement in binary files
+
+- Add file type detection before processing
+- Skip .pyc, .png, .jpg files
+- Add unit tests for binary file handling"
+
+# ❌ Bad: 曖昧
+git commit -m "update files"
+
+# ❌ Bad: 詳細不足
+git commit -m "fix bug"
+
+# ❌ Bad: 複数の変更を混在
+git commit -m "add template and fix generator and update docs"
+```
+
+## マージ戦略
+
+### PR マージ前チェックリスト
+
+```bash
+# 1. main の最新変更を取り込む
+git checkout main
+git pull origin main
+git checkout your-branch
+git merge main
+
+# 2. コンフリクト解決（必要な場合）
+# 3. 動作確認
+
+# 4. プッシュ
+git push
+```
+
+### マージ方法
+
+- **Squash and Merge**: 小さな複数コミットを1つにまとめる（推奨）
+- **Merge Commit**: 履歴を保持したい場合
+- **Rebase and Merge**: 直線的な履歴を維持したい場合
+
+## 緊急対応フロー
+
+### Hotfix（本番環境の緊急修正）
+
+```bash
+# main から直接 hotfix ブランチ作成
+git checkout main
+git pull origin main
+git checkout -b hotfix/critical-security-fix
+
+# 修正...
+git add .
+git commit -m "hotfix: Fix critical security vulnerability in generator"
+
+# 即座にプッシュしてPR作成
+git push -u origin hotfix/critical-security-fix
+
+# PR作成後、即座にレビュー・マージ
+gh pr create --title "Hotfix: Critical security vulnerability" \
+  --body "Critical fix - requires immediate merge"
+```
+
+## ワークスペース整理
+
+### 不要なブランチの削除
+
+```bash
+# マージ済みブランチの確認
+git branch --merged main
+
+# ローカルブランチ削除
+git branch -d feature/completed-feature
+
+# リモートブランチ削除
+git push origin --delete feature/completed-feature
+```
+
+### コミット履歴の整理（プッシュ前のみ）
+
+```bash
+# 最新3つのコミットをまとめる
+git rebase -i HEAD~3
+
+# エディタで "pick" を "squash" に変更
+# コミットメッセージを編集
+
+# ⚠️ 注意: プッシュ後は絶対にrebaseしない
+```
+
+## トラブルシューティング
+
+### 誤って main に直接コミットした場合
+
+```bash
+# 1. コミットを取り消す（プッシュ前）
+git reset --soft HEAD~1
+
+# 2. ブランチ作成
+git checkout -b fix/accidental-commit
+
+# 3. コミットし直す
+git commit -m "fix: Correct commit to proper branch"
+git push -u origin fix/accidental-commit
+```
+
+### 誤って main に直接プッシュした場合
+
+```bash
+# ⚠️ 重要: すぐに以下を実行
+
+# 1. 該当コミットのハッシュを確認
+git log --oneline -n 5
+
+# 2. main を1つ前に戻す
+git reset --hard HEAD~1
+
+# 3. 強制プッシュ（慎重に）
+git push origin main --force
+
+# 4. 正しいブランチで作業し直す
+git checkout -b fix/correct-branch
+git cherry-pick <commit-hash>
+git push -u origin fix/correct-branch
+```
+
+## 関連ドキュメント
+
+- [ブランチ戦略](./.cursor/rules/branch_strategy.mdc)
+- [セキュリティ開発ルール](./.cursor/rules/security.mdc)

@@ -1,0 +1,185 @@
+---
+description: テンプレートリポジトリ開発用のブランチ戦略
+globs:
+alwaysApply: true
+---
+
+# テンプレートリポジトリ ブランチ戦略
+
+このルールは `spec-driven-dev-template` リポジトリ自体の開発・メンテナンス用です。
+
+**注**: 生成されるプロジェクト向けのブランチ戦略は `templates/nextjs-fastapi/.cursor/rules/branch_strategy.mdc` を参照してください。
+
+## ブランチ構成
+
+- **main**: 安定版（リリース可能な状態）
+- **feature/***: 新機能開発用ブランチ
+- **fix/***: バグ修正用ブランチ
+- **docs/***: ドキュメント更新用ブランチ
+- **security/***: セキュリティ関連の実装・修正用ブランチ
+- **refactor/***: リファクタリング用ブランチ
+
+## ブランチ命名規則
+
+### feature/* - 新機能開発
+```
+feature/テンプレート追加: feature/django-react-template
+feature/ジェネレーター機能: feature/multi-template-support
+feature/セキュリティ統合: feature/ipa-security-integration
+```
+
+### fix/* - バグ修正
+```
+fix/ジェネレーターバグ: fix/template-variable-replacement
+fix/セキュリティルール: fix/semgrep-rule-syntax
+```
+
+### docs/* - ドキュメント更新
+```
+docs/README更新: docs/update-readme
+docs/セットアップガイド: docs/add-setup-guide
+```
+
+### security/* - セキュリティ関連
+```
+security/IPA準拠実装: security/implement-ipa-compliance
+security/脆弱性修正: security/fix-dependency-vulnerability
+```
+
+### refactor/* - リファクタリング
+```
+refactor/ジェネレーター整理: refactor/generator-structure
+refactor/テンプレート構造: refactor/template-architecture
+```
+
+## マージルール
+
+すべてのブランチは main へマージ：
+```
+feature/*  → main (PR + レビュー)
+fix/*      → main (PR + レビュー)
+docs/*     → main (PR)
+security/* → main (PR + 慎重なレビュー)
+refactor/* → main (PR + レビュー)
+```
+
+## ブランチ保護ルール
+
+### main ブランチ
+- ✅ **直接プッシュ禁止** - 必ずブランチ経由
+- ✅ **PR必須** - すべての変更はPR経由
+- ✅ **レビュー推奨** - 重要な変更（security/*, feature/*）は必須
+- ⚠️ **緊急時のみ例外** - ドキュメント軽微な修正のみ直接プッシュ可（非推奨）
+
+## 開発フロー
+
+### 1. 通常の開発フロー（推奨）
+
+```bash
+# 1. 最新のmainを取得
+git checkout main
+git pull origin main
+
+# 2. ブランチ作成
+git checkout -b feature/new-template
+
+# 3. 開発・コミット
+git add .
+git commit -m "feat: Add new template support"
+
+# 4. プッシュ
+git push -u origin feature/new-template
+
+# 5. GitHubでPR作成
+# 6. レビュー・マージ
+```
+
+### 2. セキュリティ実装フロー（慎重）
+
+```bash
+# security/* ブランチは特に慎重に
+git checkout -b security/implement-ipa-phase1
+
+# 実装・テスト
+# - ローカルでセキュリティチェック実行
+# - 動作確認を徹底
+
+git add .
+git commit -m "security: Implement IPA Phase 1 static analysis"
+git push -u origin security/implement-ipa-phase1
+
+# PR作成後、以下を確認：
+# - セキュリティルールが正しく動作するか
+# - 既存テンプレートに影響がないか
+# - ドキュメントが整備されているか
+```
+
+### 3. ドキュメント更新フロー（軽量）
+
+```bash
+# ドキュメントのみの軽微な修正
+git checkout -b docs/fix-typo
+
+git add .
+git commit -m "docs: Fix typo in README"
+git push -u origin docs/fix-typo
+
+# PR作成（レビュー不要でも可）
+```
+
+## コミットメッセージ規約
+
+### プレフィックス
+- `feat:` - 新機能追加
+- `fix:` - バグ修正
+- `docs:` - ドキュメント変更のみ
+- `security:` - セキュリティ関連の変更
+- `refactor:` - リファクタリング（機能変更なし）
+- `chore:` - ビルドプロセス、補助ツールの変更
+
+### 例
+```
+feat: Add Django + React template support
+fix: Correct template variable replacement in generators
+docs: Update security implementation guide
+security: Implement IPA Phase 2 GitHub Actions workflow
+refactor: Restructure template directory layout
+chore: Update dependencies in generators
+```
+
+## 重要な変更時のチェックリスト
+
+### テンプレート追加時
+- [ ] `.security-template/` への影響を確認
+- [ ] `generators/` の互換性を確認
+- [ ] ドキュメント更新（README, docs/）
+- [ ] 既存テンプレートへの影響がないか確認
+
+### セキュリティ実装時
+- [ ] ローカルでセキュリティチェック実行
+- [ ] テストプロジェクトで動作確認
+- [ ] ドキュメント整備（技術スタック、使い方）
+- [ ] `.gitignore` に結果ファイル追加
+
+### ジェネレーター修正時
+- [ ] 既存テンプレートで動作確認
+- [ ] バリデーション機能の確認
+- [ ] エラーハンドリングの確認
+- [ ] ドキュメント更新
+
+## 禁止事項
+
+❌ **main への直接プッシュ（重要な変更）**
+- セキュリティ実装
+- ジェネレーター変更
+- テンプレート追加・修正
+
+✅ **main への直接プッシュ（例外的に許可）**
+- ドキュメントのタイポ修正
+- README の軽微な更新
+- コメントの追加・修正
+
+## 関連ドキュメント
+
+- [Git ワークフロー](./.cursor/rules/git_workflow.mdc)
+- [セキュリティ開発ルール](./.cursor/rules/security.mdc)
