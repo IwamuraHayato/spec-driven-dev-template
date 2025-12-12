@@ -13,10 +13,13 @@ Next.js + FastAPI プロジェクト向けの包括的な開発テンプレー�
 - `commit_message.mdc`: コミットメッセージ規約
 - `branch_strategy.mdc`: ブランチ戦略
 - `testing.mdc`: テスト規約
-- `security.mdc`: セキュリティ規約
+- `security.mdc`: **IPA「安全なウェブサイトの作り方」準拠のセキュリティ規約**
+  - SQLインジェクション、XSS、CSRF など11項目の根本的対策
+  - 実装コード例（Python/TypeScript）付き
 - `documentation.mdc`: ドキュメント作成規約
 - `github.mdc`: GitHub 操作ルール
 - `pull_request_summary.mdc`: PR 要約ルール
+- `python_coding.mdc`: Python コーディング規約（型ヒント、Ruff設定）
 
 ### 3. GitHub テンプレート
 - **Issue テンプレート**: Product Backlog, Bug Report
@@ -30,6 +33,9 @@ Next.js + FastAPI プロジェクト向けの包括的な開発テンプレー�
 ### 5. ドキュメント
 - `docs/dev/REVIEW.md`: コードレビューガイドライン
 - `docs/team-development-rules.md`: チーム開発ルール
+- `docs/security/`: **セキュリティリファレンス集**
+  - IPA「安全なウェブサイトの作り方」準拠のチェックリスト
+  - SQLセキュリティ、Webアプリケーションセキュリティの実装例
 - `docs/OPENAI_INTEGRATION.md`: OpenAI 連携ガイド（オプション）
 
 ### 6. 設定ファイル
@@ -95,6 +101,7 @@ spec-driven-dev-template/
 - ❌ コミットメッセージが統一されていない
 - ❌ レビュー基準が曖昧
 - ❌ AI が適切にコードを生成できない
+- ❌ セキュリティ対策が属人化している
 
 ### After (テンプレートあり)
 
@@ -104,6 +111,7 @@ spec-driven-dev-template/
 - ✅ 体系化されたレビュープロセス
 - ✅ AI が規約に従ったコードを自動生成
 - ✅ 対話型セットアップで初心者でも簡単
+- ✅ **IPA準拠のセキュリティ規約で安全な開発**
 
 ## 🔧 カスタマイズ例
 
@@ -151,11 +159,32 @@ domain_specific:
 
 併用フロー、インストール方法、統合後のディレクトリ構造については **[USAGE.md](USAGE.md#-spec-kit-との併用)** を参照してください。
 
+## 🔒 セキュリティ機能
+
+このテンプレートには、セキュアな開発を支援する包括的なセキュリティ機能が含まれています:
+
+### IPA準拠のセキュリティ規約
+- **IPA「安全なウェブサイトの作り方 第7版」に完全準拠**
+- 11の主要脆弱性（SQLインジェクション、XSS、CSRF等）への根本的対策
+- Python/TypeScript での実装コード例付き
+
+### セキュリティチェックリスト
+- AIドリブン開発に最適化されたチェックリスト形式
+- 開発フェーズごとのチェック項目（設計・実装・テスト・運用）
+- Cursor/Claude Code での活用を想定した構造
+
+### セキュリティリファレンス集
+- SQLセキュリティ: プレースホルダ、パラメータバインディング実装例
+- Webアプリケーションセキュリティ: HTTPS、HSTS、セキュリティヘッダー設定
+
+詳細は [docs/security/](templates/nextjs-fastapi/docs/security/) を参照してください。
+
 ## 📚 参考プロジェクト
 
 このテンプレートは、以下のプロジェクトから抽出されたベストプラクティスを基にしています:
 
 - **mandom-tech0_healthcare**: 男性向けヘルスケアサービス（Flutter + FastAPI）
+- **IPA「安全なウェブサイトの作り方」**: セキュリティ規約の基盤
 
 ## 🤝 貢献
 

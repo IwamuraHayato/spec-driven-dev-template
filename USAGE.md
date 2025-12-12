@@ -246,6 +246,44 @@ assignees: ""
   run: npm audit
 ```
 
+## 🔒 セキュリティ機能の活用
+
+### セキュリティ規約の確認
+
+テンプレートには IPA「安全なウェブサイトの作り方」準拠のセキュリティ規約が含まれています:
+
+```bash
+# セキュリティ規約を確認
+cat .cursor/rules/security.mdc
+
+# セキュリティチェックリストを確認
+cat docs/security-checklist.md
+```
+
+### Cursor/Claude Code での活用
+
+セキュリティ規約は `.cursor/rules/security.mdc` に配置されているため、Cursor や Claude Code が自動的に読み込みます:
+
+- **開発時**: AIがセキュアなコードパターンを自動提案
+- **レビュー時**: セキュリティ規約に基づいた自動チェック
+- **実装時**: 脆弱性対策のコード例を参照可能
+
+### セキュリティチェックリストの使用
+
+開発フェーズごとにチェックリストを活用:
+
+```markdown
+## 実装フェーズ
+- [ ] 1-1. SQL文の組み立ては、プレースホルダを用いて実装した
+- [ ] 2-1. ファイルアクセスは、固定ディレクトリ配下に制限した
+- [ ] 3-1. セッションIDは推測困難な値で生成した
+...
+```
+
+詳細は [templates/nextjs-fastapi/docs/security/](templates/nextjs-fastapi/docs/security/) を参照してください。
+
+---
+
 ## 🔍 検証
 
 テンプレートが正しく適用されたか確認:
@@ -254,13 +292,15 @@ assignees: ""
 
 - [ ] `CLAUDE.md` にプロジェクト名が正しく記載されている
 - [ ] `README.md` にプロジェクト説明が記載されている
-- [ ] `.cursor/rules/` に 8 つのルールファイルがある
+- [ ] `.cursor/rules/` に **9 つのルールファイル**がある（security.mdc, python_coding.mdc を含む）
 - [ ] `.github/ISSUE_TEMPLATE/` に Issue テンプレートがある
 - [ ] `.github/PULL_REQUEST_TEMPLATE/` に PR テンプレートがある
 - [ ] `.github/workflows/` に GitHub Actions ワークフローがある
 - [ ] `.vscode/settings.json` に VS Code 設定がある
 - [ ] `docs/dev/REVIEW.md` にレビューガイドラインがある
 - [ ] `docs/team-development-rules.md` にチーム開発ルールがある
+- [ ] `docs/security/` にセキュリティリファレンスがある
+- [ ] `docs/security-checklist.md` にセキュリティチェックリストがある
 
 ### 動作確認
 
