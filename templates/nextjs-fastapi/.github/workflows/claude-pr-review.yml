@@ -19,12 +19,29 @@ jobs:
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
+      - name: Check API Key
+        id: check-key
+        run: |
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "has_key=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_key=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if no API key
+        if: steps.check-key.outputs.has_key == 'false'
+        run: |
+          echo "ANTHROPIC_API_KEY not configured, skipping Claude review"
+          exit 0
+
       - name: Checkout repository
+        if: steps.check-key.outputs.has_key == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Get changed files and latest commit
+        if: steps.check-key.outputs.has_key == 'true'
         id: changed-files
         run: |
           # 最新のコミットハッシュを取得
@@ -57,13 +74,13 @@ jobs:
           fi
 
       - name: Skip if no changes
-        if: steps.changed-files.outputs.has_changes == 'false'
+        if: steps.check-key.outputs.has_key == 'true' && steps.changed-files.outputs.has_changes == 'false'
         run: |
           echo "No changes detected, skipping review"
           exit 0
 
       - name: Check if already reviewed
-        if: steps.changed-files.outputs.has_changes == 'true'
+        if: steps.check-key.outputs.has_key == 'true' && steps.changed-files.outputs.has_changes == 'true'
         id: review-check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -81,13 +98,13 @@ jobs:
           fi
 
       - name: Skip if already reviewed
-        if: steps.changed-files.outputs.has_changes == 'true' && steps.review-check.outputs.already_reviewed == 'true'
+        if: steps.check-key.outputs.has_key == 'true' && steps.changed-files.outputs.has_changes == 'true' && steps.review-check.outputs.already_reviewed == 'true'
         run: |
           echo "Latest commit already reviewed, skipping"
           exit 0
 
       - name: Claude API Code Review
-        if: steps.changed-files.outputs.has_changes == 'true' && steps.review-check.outputs.already_reviewed == 'false'
+        if: steps.check-key.outputs.has_key == 'true' && steps.changed-files.outputs.has_changes == 'true' && steps.review-check.outputs.already_reviewed == 'false'
         id: claude-review
         uses: anthropics/claude-code-action@beta
         with:
@@ -95,7 +112,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           model: "claude-sonnet-4-20250514"
           trigger_phrase: "@claude"
-          timeout_minutes: "30"
+          timeout_minutes: "5"
           direct_prompt: |
             You are a helpful assistant that reviews code changes in a pull request for {{PROJECT_NAME}}.
             Review the code changes and provide feedback in Japanese, referencing @docs/dev/REVIEW.md.
