@@ -147,6 +147,283 @@ git add .
 git commit -m "chore: initial project setup from template"
 ```
 
+## 🔧 開発環境のセットアップ
+
+テンプレート生成後、フロントエンドとバックエンドの開発環境を構築します。
+
+### フロントエンド環境（Next.js）
+
+#### 1. Next.jsプロジェクトを作成
+
+```bash
+cd your-project-directory
+npx create-next-app@latest frontend
+
+# 推奨設定:
+# ✔ TypeScript? Yes
+# ✔ ESLint? Yes
+# ✔ Tailwind CSS? Yes
+# ✔ src/ directory? Yes
+# ✔ App Router? Yes
+# ✔ customize import alias? No (default @/*)
+```
+
+#### 2. 設定ファイルをコピー
+
+```bash
+# ESLint設定をコピー
+cp .config-templates/frontend/.eslintrc.json frontend/
+
+# Prettier設定をコピー
+cp .config-templates/frontend/.prettierrc.json frontend/
+
+# 環境変数テンプレートをコピー
+cp .config-templates/frontend/.env.example frontend/
+```
+
+#### 3. package.jsonにスクリプトを追加
+
+`frontend/package.json` を開き、以下のスクリプトを追加:
+
+```json
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+
+    // 以下を追加:
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "type-check": "tsc --noEmit"
+  }
+}
+```
+
+詳細は `.config-templates/frontend/package-scripts.md` を参照。
+
+#### 4. Next.js設定を更新（オプション）
+
+`frontend/next.config.ts` を以下のように更新（本番デプロイ最適化）:
+
+```typescript
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  output: 'standalone',  // ← 追加: Docker/本番デプロイ最適化
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  },
+}
+
+export default nextConfig
+```
+
+参考: `.config-templates/frontend/next-config-template.ts`
+
+#### 5. 依存関係をインストール
+
+```bash
+cd frontend
+npm install
+```
+
+#### 6. 動作確認
+
+```bash
+# フォーマット実行
+npm run format
+
+# Lintチェック
+npm run lint
+
+# 型チェック
+npm run type-check
+
+# 開発サーバー起動
+npm run dev
+```
+
+ブラウザで http://localhost:3000 を開いて確認。
+
+---
+
+### バックエンド環境（FastAPI）
+
+#### 1. Pythonバージョン確認
+
+```bash
+python --version
+# Python 3.12+ を推奨
+```
+
+#### 2. プロジェクト構造を作成
+
+```bash
+cd your-project-directory
+mkdir -p backend/app/{api,core,schemas,services,utils}
+touch backend/app/__init__.py
+touch backend/app/main.py
+```
+
+#### 3. 仮想環境を作成
+
+```bash
+cd backend
+python -m venv .venv
+
+# 仮想環境を有効化
+# macOS/Linux:
+source .venv/bin/activate
+
+# Windows:
+.venv\Scripts\activate
+```
+
+#### 4. 設定ファイルをコピー
+
+```bash
+# ルートディレクトリから実行
+cp .config-templates/backend/requirements.txt backend/
+cp .config-templates/backend/requirements-dev.txt backend/
+cp .config-templates/backend/pyproject.toml backend/
+cp .config-templates/backend/ruff.toml backend/
+cp .config-templates/backend/.env.example backend/
+```
+
+#### 5. 依存関係をインストール
+
+```bash
+cd backend
+
+# 本番依存関係
+pip install -r requirements.txt
+
+# 開発依存関係（lint, test, type-check）
+pip install -r requirements-dev.txt
+```
+
+#### 6. FastAPI最小構成を作成
+
+`backend/app/main.py` を作成:
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(title="{{PROJECT_NAME}} API", version="0.1.0")
+
+# CORS設定
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+```
+
+#### 7. 動作確認
+
+```bash
+# Lintチェック
+ruff check .
+
+# フォーマット
+ruff format .
+
+# 型チェック
+mypy .
+
+# 開発サーバー起動
+uvicorn app.main:app --reload --port 8000
+```
+
+ブラウザで http://localhost:8000/docs を開いてAPI仕様を確認。
+
+---
+
+### ディレクトリ構造の完成形
+
+セットアップ完了後のディレクトリ構造:
+
+```
+your-project/
+├── .config-templates/          # 設定ファイルテンプレート
+├── .cursor/rules/              # Cursor/Claude Code開発規約
+├── .github/                    # GitHub Actions, Issue/PR テンプレート
+├── .vscode/                    # VS Code設定
+├── docs/                       # ドキュメント
+├── frontend/                   # Next.jsフロントエンド
+│   ├── src/
+│   │   ├── app/               # Next.js App Router
+│   │   ├── components/        # 再利用可能コンポーネント
+│   │   ├── lib/               # ユーティリティ関数、APIクライアント
+│   │   └── types/             # TypeScript型定義
+│   ├── .eslintrc.json
+│   ├── .prettierrc.json
+│   ├── .env.example
+│   ├── next.config.ts
+│   ├── tailwind.config.ts
+│   ├── tsconfig.json
+│   └── package.json
+├── backend/                    # FastAPIバックエンド
+│   ├── app/
+│   │   ├── api/               # APIエンドポイント
+│   │   ├── core/              # 設定、認証、依存性注入
+│   │   ├── schemas/           # Pydanticスキーマ
+│   │   ├── services/          # ビジネスロジック
+│   │   ├── utils/             # ヘルパー関数
+│   │   └── main.py            # FastAPIアプリケーション
+│   ├── tests/                 # テストコード
+│   ├── .env.example
+│   ├── pyproject.toml         # mypy, pytest設定
+│   ├── ruff.toml              # Ruff設定
+│   ├── requirements.txt
+│   └── requirements-dev.txt
+├── CLAUDE.md                   # AI向けプロジェクト指示書
+└── README.md                   # プロジェクト概要
+```
+
+---
+
+### 開発コマンド一覧
+
+#### フロントエンド（frontend/）
+
+```bash
+npm run dev           # 開発サーバー起動（http://localhost:3000）
+npm run build         # 本番ビルド
+npm run start         # 本番サーバー起動
+npm run lint          # ESLintチェック
+npm run format        # Prettierフォーマット
+npm run format:check  # フォーマットチェック（CI用）
+npm run type-check    # TypeScript型チェック
+npm run test          # Jestテスト実行（設定後）
+```
+
+#### バックエンド（backend/）
+
+```bash
+uvicorn app.main:app --reload --port 8000  # 開発サーバー起動
+ruff check .          # Lintチェック
+ruff format .         # フォーマット
+mypy .                # 型チェック
+pytest                # テスト実行
+pytest --cov=app      # カバレッジ付きテスト
+```
+
+---
+
 ## 📝 詳細設定
 
 ### CLAUDE.md のカスタマイズ
@@ -290,6 +567,7 @@ cat docs/security-checklist.md
 
 ### チェックリスト
 
+#### テンプレート生成の確認
 - [ ] `CLAUDE.md` にプロジェクト名が正しく記載されている
 - [ ] `README.md` にプロジェクト説明が記載されている
 - [ ] `.cursor/rules/` に **9 つのルールファイル**がある（security.mdc, python_coding.mdc を含む）
@@ -302,27 +580,83 @@ cat docs/security-checklist.md
 - [ ] `docs/security/` にセキュリティリファレンスがある
 - [ ] `docs/security-checklist.md` にセキュリティチェックリストがある
 
+#### 開発環境設定の確認（🆕）
+- [ ] `.config-templates/frontend/` ディレクトリが存在する
+- [ ] `.config-templates/backend/` ディレクトリが存在する
+- [ ] フロントエンド設定ファイル（.eslintrc.json, .prettierrc.json等）がコピーされている
+- [ ] バックエンド設定ファイル（ruff.toml, pyproject.toml等）がコピーされている
+- [ ] `frontend/package.json` に `format`, `type-check` scriptsが追加されている
+
 ### 動作確認
 
-1. **VS Code でプロジェクトを開く**
-   ```bash
-   code .
-   ```
+#### 1. テンプレート生成の確認
 
-2. **Cursor で開発規約が適用されるか確認**
-   - `.cursor/rules/` のルールが自動的に読み込まれる
+**VS Code でプロジェクトを開く**:
+```bash
+code .
+```
 
-3. **GitHub Actions の動作確認**
-   - ブランチを作成してダミーコミット
-   ```bash
-   git checkout -b test/verify-template
-   echo "test" > test.txt
-   git add test.txt
-   git commit -m "test: verify template setup"
-   git push origin test/verify-template
-   ```
-   - GitHub で PR を作成
-   - GitHub Actions が自動実行されることを確認
+**Cursor で開発規約が適用されるか確認**:
+- `.cursor/rules/` のルールが自動的に読み込まれる
+
+**GitHub Actions の動作確認**:
+```bash
+git checkout -b test/verify-template
+echo "test" > test.txt
+git add test.txt
+git commit -m "test: verify template setup"
+git push origin test/verify-template
+```
+- GitHub で PR を作成
+- GitHub Actions が自動実行されることを確認
+
+#### 2. 開発環境の動作確認（🆕）
+
+**フロントエンド品質チェック**:
+```bash
+cd frontend
+
+# フォーマットチェック
+npm run format:check
+
+# Lintチェック
+npm run lint
+
+# 型チェック
+npm run type-check
+
+# すべて成功すれば設定完了 ✅
+```
+
+**バックエンド品質チェック**:
+```bash
+cd backend
+
+# Lintチェック
+ruff check .
+
+# 型チェック
+mypy .
+
+# フォーマットチェック
+ruff format --check .
+
+# すべて成功すれば設定完了 ✅
+```
+
+**開発サーバー起動確認**:
+```bash
+# Terminal 1: Backend
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload
+# → http://localhost:8000/docs が開けばOK
+
+# Terminal 2: Frontend
+cd frontend
+npm run dev
+# → http://localhost:3000 が開けばOK
+```
 
 ## 🚨 トラブルシューティング
 

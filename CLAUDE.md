@@ -10,6 +10,7 @@
 - **開発規約**: Git ワークフロー、ブランチ戦略、コーディングスタイル
 - **自動化**: GitHub Actions による CI/CD、PR 自動レビュー
 - **テンプレート**: Next.js + FastAPI フルスタックアプリケーション
+- **開発環境設定**: ESLint, Prettier, Ruff, mypy等の即座に使える設定ファイル（🆕 Phase 1完成）
 
 ## 🏗️ アーキテクチャ
 
@@ -23,10 +24,17 @@ spec-driven-dev-template/
 │   └── git_workflow.mdc       # Git 運用ルール
 ├── templates/                  # プロジェクトテンプレート
 │   └── nextjs-fastapi/        # Next.js + FastAPI テンプレート
+│       ├── .config-templates/ # 🆕 開発環境設定テンプレート
+│       │   ├── frontend/      # Next.js設定（ESLint, Prettier, npm scripts）
+│       │   └── backend/       # FastAPI設定（Ruff, mypy, pytest）
+│       ├── .cursor/rules/     # 開発規約（9ファイル）
+│       ├── .github/           # GitHub テンプレート
+│       ├── .vscode/           # VS Code設定
+│       └── docs/              # ドキュメント
 ├── generators/                 # 自動生成スクリプト
 │   ├── interactive_setup.py   # 対話型セットアップ
 │   └── setup.py               # 設定ファイルベース生成
-├── USAGE.md                   # 使い方ガイド
+├── USAGE.md                   # 使い方ガイド（開発環境セットアップ手順追加）
 └── CLAUDE.md                  # 本ファイル（Claude Code 設定）
 ```
 

@@ -38,7 +38,22 @@ Next.js + FastAPI プロジェクト向けの包括的な開発テンプレー�
   - SQLセキュリティ、Webアプリケーションセキュリティの実装例
 - `docs/OPENAI_INTEGRATION.md`: OpenAI 連携ガイド（オプション）
 
-### 6. 設定ファイル
+### 6. 開発環境設定テンプレート (🆕 Phase 1完成)
+- **`.config-templates/frontend/`**: Next.js開発環境設定
+  - `.eslintrc.json`: ESLint + TypeScript strict設定
+  - `.prettierrc.json`: Prettier設定（モダンスタイル）
+  - `.env.example`: 環境変数テンプレート
+  - `package-scripts.md`: npm scriptsガイド（`format`, `type-check`等）
+  - `tsconfig-additions.md`: Path alias設定ガイド
+  - `next-config-template.ts`: Next.js設定例（standalone mode）
+- **`.config-templates/backend/`**: FastAPI開発環境設定
+  - `requirements.txt`: 本番依存関係
+  - `requirements-dev.txt`: 開発依存関係（ruff, mypy, pytest）
+  - `pyproject.toml`: mypy + pytest + coverage設定
+  - `ruff.toml`: Ruff lint/format設定
+  - `.env.example`: 環境変数テンプレート
+
+### 7. 設定ファイル
 - `template-config.yaml`: プロジェクト変数定義
 
 ## 🚀 使い方
@@ -67,8 +82,22 @@ python interactive_setup.py
 spec-driven-dev-template/
 ├── templates/
 │   └── nextjs-fastapi/           # Next.js + FastAPI テンプレート
+│       ├── .config-templates/    # 🆕 開発環境設定テンプレート
+│       │   ├── frontend/         # Next.js設定
+│       │   │   ├── .eslintrc.json
+│       │   │   ├── .prettierrc.json
+│       │   │   ├── .env.example
+│       │   │   ├── package-scripts.md
+│       │   │   ├── tsconfig-additions.md
+│       │   │   └── next-config-template.ts
+│       │   └── backend/          # FastAPI設定
+│       │       ├── requirements.txt
+│       │       ├── requirements-dev.txt
+│       │       ├── pyproject.toml
+│       │       ├── ruff.toml
+│       │       └── .env.example
 │       ├── .cursor/
-│       │   └── rules/            # 開発規約（8ファイル）
+│       │   └── rules/            # 開発規約（9ファイル）
 │       ├── .github/
 │       │   ├── ISSUE_TEMPLATE/   # Issue テンプレート
 │       │   ├── PULL_REQUEST_TEMPLATE/
@@ -79,6 +108,7 @@ spec-driven-dev-template/
 │       ├── docs/
 │       │   ├── dev/
 │       │   │   └── REVIEW.md     # レビューガイドライン
+│       │   ├── security/         # セキュリティリファレンス
 │       │   └── team-development-rules.md.template
 │       ├── CLAUDE.md.template    # AI 向け指示書
 │       ├── README.md.template    # プロジェクト README
@@ -102,6 +132,8 @@ spec-driven-dev-template/
 - ❌ レビュー基準が曖昧
 - ❌ AI が適切にコードを生成できない
 - ❌ セキュリティ対策が属人化している
+- ❌ ESLint/Prettier設定に毎回30分〜1時間かかる
+- ❌ 開発環境の品質ツール設定が面倒
 
 ### After (テンプレートあり)
 
@@ -112,6 +144,8 @@ spec-driven-dev-template/
 - ✅ AI が規約に従ったコードを自動生成
 - ✅ 対話型セットアップで初心者でも簡単
 - ✅ **IPA準拠のセキュリティ規約で安全な開発**
+- ✅ **即座に使える開発環境設定**（ESLint, Prettier, Ruff, mypy）
+- ✅ **npm run format, npm run type-check等の標準コマンド完備**
 
 ## 🔧 カスタマイズ例
 
